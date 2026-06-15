@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lembur Mandala — Design Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#120b09;--bg2:#1e1009;--bg3:#2a160d;
+  --cream:#f2e3d0;--cream2:#f9f2ea;
+  --gold:#c8994e;--gold2:#e8c87a;
+  --rose:#c47a72;--burg:#7e1f2c;--burg2:#a82c3a;
+  --brown:#4a2015;--text:#2a1810;--muted:#8a6a58;
+  --amber:#d4880a;--amber2:#f5b830;--amberbg:rgba(212,136,10,.12);
+  --green:#3a9e5f;--greenbg:rgba(58,158,95,.12);
+  --border:rgba(200,153,78,.22);--border2:rgba(200,153,78,.12);
+  --r:18px;--r2:12px;--r3:28px;
+}
+body{font-family:'DM Sans',sans-serif;background:#0e0806;min-height:100vh;color:var(--cream);overflow-x:hidden}
+
+/* ── Nav ── */
+.screen-nav{position:fixed;top:0;left:0;right:0;z-index:999;background:rgba(14,8,6,.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:4px;padding:10px 20px}
+.screen-nav .logo{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:var(--gold);margin-right:16px;white-space:nowrap}
+.nav-btn{padding:6px 14px;border-radius:20px;border:1px solid transparent;background:transparent;color:rgba(242,227,208,.5);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap}
+.nav-btn:hover{color:var(--cream);background:rgba(200,153,78,.1)}
+.nav-btn.active{background:var(--gold);color:#120b09;font-weight:600}
+.nav-label{font-size:11px;color:var(--muted);margin-left:auto;white-space:nowrap}
+
+/* ── Screens ── */
+.screen{display:none;min-height:100vh;padding-top:53px}
+.screen.active{display:block}
+
+/* ══ SHARED COMPONENTS ══ */
+/* Deadline alert banner */
+.deadline-banner{display:flex;align-items:center;gap:12px;padding:12px 20px;border-radius:var(--r2);border:1px solid rgba(212,136,10,.35);background:var(--amberbg);margin-bottom:16px}
+.deadline-banner.urgent{border-color:rgba(196,122,114,.45);background:rgba(196,122,114,.1)}
+.deadline-banner.done{border-color:rgba(58,158,95,.35);background:var(--greenbg)}
+.dl-icon{font-size:20px;flex-shrink:0}
+.dl-text{flex:1}
+.dl-title{font-size:13px;font-weight:600;color:var(--gold2)}
+.deadline-banner.urgent .dl-title{color:var(--rose)}
+.deadline-banner.done .dl-title{color:#6fcf97}
+.dl-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.dl-dismiss{padding:4px 12px;border-radius:20px;border:1px solid rgba(200,153,78,.3);background:transparent;color:var(--muted);font-size:11px;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif}
+.dl-dismiss:hover{color:var(--gold);border-color:rgba(200,153,78,.5)}
+
+/* Topbar */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}
+.t-logo{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:var(--gold)}
+.t-logo span{color:var(--cream);font-weight:400}
+.user-pill{display:flex;align-items:center;gap:10px;background:var(--bg3);border:1px solid var(--border);border-radius:24px;padding:6px 14px 6px 6px}
+.avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white;flex-shrink:0}
+.av-v{background:linear-gradient(135deg,#7e1f2c,#a82c3a)}
+.av-a{background:linear-gradient(135deg,#1f4e7e,#2c6aa8)}
+.av-l{background:linear-gradient(135deg,#1f7e4e,#2ca862)}
+.av-r{background:linear-gradient(135deg,#4e1f7e,#6c2ca8)}
+.av-z{background:linear-gradient(135deg,#7e4e1f,#a86c2c)}
+.av-zv{background:linear-gradient(135deg,#1f7e7e,#2ca8a8)}
+.u-name{font-size:13px;font-weight:600;color:var(--cream)}
+.u-nik{font-size:11px;color:var(--muted);font-family:monospace}
+.btn-logout{padding:5px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+.btn-logout:hover{color:var(--cream)}
+
+/* Month tabs */
+.month-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.month-tab{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.month-tab:hover{color:var(--cream);border-color:rgba(200,153,78,.4)}
+.month-tab.active{background:var(--bg3);border-color:var(--gold);color:var(--cream);font-weight:600}
+.month-tab.active .tab-bulan{color:var(--gold)}
+.month-tab .tab-badge{font-size:10px;padding:2px 6px;border-radius:20px;font-weight:600}
+.tab-submitted{background:rgba(58,158,95,.15);color:#6fcf97;border:1px solid rgba(58,158,95,.25)}
+.tab-draft{background:var(--amberbg);color:var(--gold2);border:1px solid rgba(212,136,10,.25)}
+.tab-active-now{background:rgba(196,122,114,.15);color:var(--rose);border:1px solid rgba(196,122,114,.3)}
+
+/* Bento grid */
+.bento{display:grid;gap:14px;max-width:1100px;margin:0 auto}
+.bento-3{grid-template-columns:1fr 1fr 1fr}
+.bento-main{grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto auto 1fr}
+
+/* Cards */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r3);overflow:hidden;position:relative}
+.card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(200,153,78,.05) 0%,transparent 60%);pointer-events:none}
+.card-pad{padding:22px 24px}
+.card-hero{background:linear-gradient(145deg,var(--burg) 0%,#3a0d15 100%);border-color:rgba(168,44,58,.4)}
+.card-hero::before{background:none}
+
+/* ══════════════════════════════════════════════════════════
+   SCREEN 1 — LOGIN
+══════════════════════════════════════════════════════════ */
+.login-wrap{display:grid;grid-template-columns:1fr 1fr;min-height:calc(100vh - 53px)}
+.login-art{position:relative;overflow:hidden}
+.login-art img{width:100%;height:100%;object-fit:cover;object-position:center top;filter:saturate(.9)brightness(.75)}
+.login-art-overlay{position:absolute;inset:0;background:linear-gradient(135deg,rgba(126,31,44,.55) 0%,rgba(18,11,9,.8) 100%)}
+.login-art-content{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:48px 44px}
+.art-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(200,153,78,.18);border:1px solid rgba(200,153,78,.4);border-radius:20px;padding:6px 14px;font-size:12px;color:var(--gold2);font-weight:500;margin-bottom:20px;width:fit-content}
+.art-title{font-family:'Cormorant Garamond',serif;font-size:42px;font-weight:600;line-height:1.2;color:var(--cream);margin-bottom:14px}
+.art-title em{color:var(--gold2);font-style:italic}
+.art-sub{font-size:14px;color:rgba(242,227,208,.65);line-height:1.6;max-width:320px}
+.art-dots{display:flex;gap:8px;margin-top:28px}
+.art-dots span{width:8px;height:8px;border-radius:50%;background:rgba(200,153,78,.4)}
+.art-dots span.on{background:var(--gold);width:24px;border-radius:4px}
+.login-form-panel{background:var(--cream2);display:flex;flex-direction:column;justify-content:center;padding:60px 64px}
+.login-brand{display:flex;align-items:center;gap:12px;margin-bottom:44px}
+.login-brand-icon{width:44px;height:44px;border-radius:12px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:20px}
+.login-brand-name{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:var(--text)}
+.login-brand-sub{font-size:12px;color:var(--muted)}
+.login-h{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:700;color:var(--text);margin-bottom:6px}
+.login-sub{font-size:14px;color:var(--muted);margin-bottom:36px}
+.form-field{margin-bottom:20px}
+.form-label{display:block;font-size:13px;font-weight:500;color:var(--brown);margin-bottom:8px}
+.input-wrap{position:relative}
+.input-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);opacity:.45;font-size:15px}
+.form-input{width:100%;padding:13px 16px 13px 42px;border-radius:var(--r2);border:1.5px solid #ddd0c4;background:white;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);outline:none;transition:border-color .2s}
+.form-input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(200,153,78,.15)}
+.form-input::placeholder{color:#c4b0a0}
+.form-forgot{font-size:12px;color:var(--gold);font-weight:500;text-align:right;margin-top:-12px;margin-bottom:20px;cursor:pointer}
+.btn-primary{width:100%;padding:14px;border-radius:var(--r2);border:none;background:linear-gradient(135deg,var(--burg2),var(--burg));color:white;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(126,31,44,.4)}
+.login-footer{margin-top:32px;text-align:center;font-size:12px;color:var(--muted)}
+.login-footer a{color:var(--gold);font-weight:500}
+
+/* ══════════════════════════════════════════════════════════
+   SCREEN 2 — EMPLOYEE DASHBOARD (current month)
+══════════════════════════════════════════════════════════ */
+.dash-bg{min-height:calc(100vh - 53px);background:var(--bg);padding:24px;position:relative;overflow:hidden}
+.dash-bg-art{position:absolute;top:0;right:0;width:520px;height:520px;object-fit:cover;opacity:.04;pointer-events:none;border-radius:0 0 0 100%}
+
+/* Hero stat */
+.stat-hero-art{position:absolute;right:-20px;top:-20px;width:180px;height:180px;object-fit:cover;border-radius:50%;opacity:.18;filter:saturate(.5)}
+.stat-hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:4px 12px;font-size:11px;color:rgba(255,255,255,.8);font-weight:500;margin-bottom:14px}
+.stat-hero-month{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;color:white;margin-bottom:4px}
+.stat-hero-status{font-size:12px;color:rgba(255,255,255,.65);margin-bottom:22px}
+.stat-nums{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stat-val{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:white;line-height:1}
+.stat-lbl{font-size:11px;color:rgba(255,255,255,.55);margin-top:2px}
+.stat-mini-val{font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:600;color:var(--gold);line-height:1}
+.stat-mini-lbl{font-size:12px;color:var(--muted);margin-top:4px}
+.stat-mini-sub{font-size:11px;color:var(--muted);margin-top:8px}
+
+/* Actions card */
+.action-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px}
+.action-btn{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:var(--r2);border:1px solid transparent;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;text-align:left;width:100%;margin-bottom:8px}
+.action-btn:last-child{margin-bottom:0}
+.ab-gold{background:linear-gradient(135deg,var(--gold),#a87830);color:var(--bg);font-size:14px;font-weight:600}
+.ab-gold:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(200,153,78,.35)}
+.ab-dark{background:var(--bg3);border-color:var(--border);color:var(--cream);font-size:13px;font-weight:500}
+.ab-dark:hover{border-color:rgba(200,153,78,.4);background:rgba(200,153,78,.08)}
+.ab-red{background:linear-gradient(135deg,var(--burg2),var(--burg));color:white;font-size:13px;font-weight:600}
+.ab-red:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(126,31,44,.4)}
+.ab-icon{font-size:17px;flex-shrink:0}
+.ab-sub{font-size:11px;opacity:.65}
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:8px 0}
+
+/* Event list */
+.ev-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid var(--border2)}
+.ev-title{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--cream)}
+.ev-count{background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px 12px;font-size:12px;color:var(--gold);font-weight:600}
+.ev-body{padding:10px}
+.ev-item{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:12px;padding:12px;border-radius:var(--r2);border:1px solid transparent;cursor:pointer;transition:all .15s;margin-bottom:4px}
+.ev-item:hover{background:rgba(200,153,78,.05);border-color:var(--border2)}
+.ev-item:last-child{margin-bottom:0}
+.ev-date{width:42px;height:42px;border-radius:9px;background:var(--bg3);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
+.ev-day{font-size:15px;font-weight:700;color:var(--gold);line-height:1}
+.ev-mon{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.ev-proj{display:inline-flex;align-items:center;background:rgba(200,153,78,.12);border:1px solid rgba(200,153,78,.25);border-radius:20px;padding:2px 8px;font-size:10px;color:var(--gold);font-weight:600;margin-bottom:3px}
+.ev-desc{font-size:13px;color:var(--cream);line-height:1.35}
+.ev-tags{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+.tag{padding:2px 7px;border-radius:20px;font-size:10px;font-weight:500}
+.tag-wfh{background:rgba(100,149,237,.15);color:#89b4f8;border:1px solid rgba(100,149,237,.25)}
+.tag-wfo{background:rgba(80,200,120,.12);color:#86c98a;border:1px solid rgba(80,200,120,.22)}
+.tag-wknd{background:rgba(200,153,78,.12);color:var(--gold2);border:1px solid rgba(200,153,78,.25)}
+.tag-stnby{background:rgba(196,122,114,.12);color:var(--rose);border:1px solid rgba(196,122,114,.25)}
+.ev-jam{font-size:11px;color:var(--muted);font-family:monospace;text-align:right;white-space:nowrap}
+.ev-jam strong{color:var(--cream);font-size:14px;font-family:'Cormorant Garamond',serif;display:block}
+.ev-acts{display:flex;gap:5px}
+.ev-btn{width:28px;height:28px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.ev-btn:hover{color:var(--gold);border-color:rgba(200,153,78,.4)}
+.ev-btn-del:hover{color:var(--rose);border-color:rgba(196,122,114,.4)}
+
+/* Readonly overlay badge */
+.readonly-banner{display:flex;align-items:center;gap:10px;padding:10px 16px;background:rgba(58,158,95,.08);border:1px solid rgba(58,158,95,.25);border-radius:var(--r2);margin:10px;font-size:12px;color:#6fcf97}
+.readonly-banner strong{font-weight:600}
+
+/* Timeline */
+.tl-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:18px}
+.tl-item{display:flex;gap:12px;margin-bottom:16px;position:relative}
+.tl-item:not(:last-child)::before{content:'';position:absolute;left:13px;top:28px;width:1px;bottom:-8px;background:var(--border)}
+.tl-dot{width:27px;height:27px;border-radius:50%;border:2px solid var(--border);background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:2px}
+.tl-dot.done{border-color:var(--gold);background:rgba(200,153,78,.15)}
+.tl-dot.now{border-color:var(--rose);background:rgba(196,122,114,.15)}
+.tl-lbl{font-size:12px;font-weight:600;color:var(--cream)}
+.tl-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.prog-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px}
+.prog-label span:last-child{color:var(--gold);font-weight:600}
+.prog-track{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:3px}
+
+/* ══════════════════════════════════════════════════════════
+   SCREEN 3 — ADD EVENT PANEL
+══════════════════════════════════════════════════════════ */
+.panel-bg{min-height:calc(100vh - 53px);background:var(--bg);position:relative;overflow:hidden}
+.panel-backdrop{position:absolute;inset:0;background:rgba(12,8,6,.72);backdrop-filter:blur(3px);z-index:1}
+.slide-panel{position:absolute;top:0;right:0;bottom:0;width:500px;background:var(--cream2);z-index:2;overflow-y:auto;box-shadow:-8px 0 48px rgba(0,0,0,.5)}
+.panel-head{display:flex;align-items:center;justify-content:space-between;padding:22px 28px 18px;border-bottom:1px solid #e8d8c8;position:sticky;top:0;background:var(--cream2);z-index:1}
+.panel-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:var(--text)}
+.panel-sub{font-size:13px;color:var(--muted)}
+.panel-close{width:34px;height:34px;border-radius:50%;border:1.5px solid #ddd0c4;background:white;cursor:pointer;font-size:16px;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:all .15s}
+.panel-close:hover{border-color:var(--rose);color:var(--rose)}
+.panel-body{padding:22px 28px}
+.field-group{margin-bottom:22px}
+.field-label{display:block;font-size:13px;font-weight:600;color:var(--brown);margin-bottom:9px}
+.field-hint{font-size:11px;color:var(--muted);font-weight:400;margin-left:5px}
+.date-input,.kegiatan-area,.time-input{width:100%;padding:11px 14px;border-radius:var(--r2);border:1.5px solid #ddd0c4;background:white;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);outline:none;transition:border-color .2s}
+.date-input:focus,.kegiatan-area:focus,.time-input:focus{border-color:var(--gold)}
+.kegiatan-area{resize:vertical;min-height:76px}
+.time-input{font-size:15px;font-weight:600}
+.project-pills{display:flex;flex-wrap:wrap;gap:7px}
+.proj-pill{padding:7px 14px;border-radius:20px;border:1.5px solid #ddd0c4;background:white;font-size:13px;font-weight:500;color:var(--brown);cursor:pointer;transition:all .15s}
+.proj-pill.sel{background:var(--bg);border-color:var(--gold);color:var(--gold);font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+.chip{padding:4px 11px;border-radius:20px;border:1px solid #ddd0c4;background:#f5ede3;font-size:12px;color:var(--brown);cursor:pointer;transition:all .15s}
+.chip:hover{border-color:var(--gold);background:rgba(200,153,78,.1);color:var(--text)}
+.time-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.time-lbl{font-size:12px;font-weight:500;color:var(--muted);margin-bottom:5px}
+.presets{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
+.preset{padding:3px 8px;border-radius:20px;border:1px solid #e0d0c0;background:#faf4ee;font-size:11px;color:var(--muted);cursor:pointer;font-family:monospace;transition:all .15s}
+.preset:hover{border-color:var(--gold);color:var(--brown)}
+.dur-box{display:flex;align-items:center;justify-content:space-between;background:var(--bg);border-radius:var(--r2);padding:14px 18px;margin-top:12px}
+.dur-val{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:var(--gold);line-height:1}
+.dur-lbl{font-size:11px;color:rgba(242,227,208,.5);margin-top:2px}
+.dur-div{width:1px;background:var(--border);height:32px}
+.dur-input{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:var(--gold);line-height:1;background:transparent;border:none;border-bottom:1.5px solid rgba(200,153,78,.35);outline:none;width:70px;text-align:center}
+.dur-input:focus{border-bottom-color:var(--gold2)}
+.dur-edit-hint{font-size:10px;color:rgba(200,153,78,.45);margin-top:3px;text-align:center}
+
+/* Multi-kegiatan rows */
+.kegiatan-list{display:flex;flex-direction:column;gap:8px;margin-bottom:4px}
+.kegiatan-row{display:flex;align-items:flex-start;gap:8px}
+.kegiatan-row-num{width:22px;height:22px;border-radius:50%;background:#f0e4d6;border:1px solid #ddd0c4;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0;margin-top:11px}
+.kegiatan-row textarea{flex:1;min-height:54px;padding:10px 13px;border-radius:var(--r2);border:1.5px solid #ddd0c4;background:white;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);outline:none;resize:vertical;transition:border-color .2s}
+.kegiatan-row textarea:focus{border-color:var(--gold)}
+.kegiatan-del{width:28px;height:28px;border-radius:7px;border:1px solid #ddd0c4;background:white;color:#c47a72;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:11px;transition:all .15s;font-family:sans-serif}
+.kegiatan-del:hover{border-color:#c47a72;background:#fff0ee}
+.kegiatan-add-btn{display:flex;align-items:center;gap:7px;padding:7px 14px;border-radius:20px;border:1.5px dashed #ddd0c4;background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .2s;margin-top:2px}
+.kegiatan-add-btn:hover{border-color:var(--gold);color:var(--brown)}
+
+.toggle-row{display:flex;flex-wrap:wrap;gap:9px}
+.tog{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:20px;border:1.5px solid #ddd0c4;background:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--brown);cursor:pointer;transition:all .15s}
+.tog.on-wknd{background:rgba(200,153,78,.1);border-color:var(--gold);color:#6b4a10}
+.tog.on-stnby{background:rgba(196,122,114,.1);border-color:var(--rose);color:#7a3028}
+.tog.on-wfo{background:rgba(80,160,100,.1);border-color:#6db880;color:#1e5a2a}
+.tog-dot{width:15px;height:15px;border-radius:50%;border:2px solid #ddd0c4;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.on-wknd .tog-dot{border-color:var(--gold);background:var(--gold)}
+.on-stnby .tog-dot{border-color:var(--rose);background:var(--rose)}
+.on-wfo .tog-dot{border-color:#6db880;background:#6db880}
+.tog-dot::after{content:'';width:5px;height:5px;border-radius:50%;background:white;display:block}
+.panel-foot{display:flex;gap:10px;padding:18px 28px 26px;border-top:1px solid #e8d8c8;background:var(--cream2);position:sticky;bottom:0}
+.btn-save{flex:1;padding:13px;border-radius:var(--r2);border:none;background:linear-gradient(135deg,var(--burg2),var(--burg));color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-save:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(126,31,44,.4)}
+.btn-cancel{padding:13px 18px;border-radius:var(--r2);border:1.5px solid #ddd0c4;background:white;color:var(--brown);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s}
+.btn-cancel:hover{border-color:var(--rose);color:var(--rose)}
+
+/* ══════════════════════════════════════════════════════════
+   SCREEN 4 — HISTORY (past month read-only)
+══════════════════════════════════════════════════════════ */
+/* reuses dash-bg, bento, card classes */
+.submitted-stamp{display:inline-flex;align-items:center;gap:7px;background:rgba(58,158,95,.12);border:1px solid rgba(58,158,95,.3);border-radius:20px;padding:5px 14px;font-size:12px;color:#6fcf97;font-weight:600}
+.history-empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px}
+
+/* ══════════════════════════════════════════════════════════
+   SCREEN 5 — ADMIN
+══════════════════════════════════════════════════════════ */
+.admin-bg{min-height:calc(100vh - 53px);background:var(--bg);padding:24px}
+.admin-grid{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:268px 1fr;gap:14px}
+.admin-topbar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+.admin-logo{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:var(--gold)}
+.admin-logo span{color:var(--cream);font-weight:400}
+.admin-badge{display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,rgba(126,31,44,.3),rgba(168,44,58,.15));border:1px solid rgba(168,44,58,.4);border-radius:20px;padding:6px 14px;font-size:12px;color:var(--rose);font-weight:600}
+
+/* Sidebar */
+.sidebar{display:flex;flex-direction:column;gap:8px}
+.sidebar-section{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);padding:0 10px;margin-bottom:2px}
+.sidebar-month{padding:12px 14px;border-radius:var(--r2);border:1px solid transparent;cursor:pointer;transition:all .15s;position:relative}
+.sidebar-month:hover{background:var(--bg3);border-color:var(--border)}
+.sidebar-month.active{background:var(--bg2);border-color:var(--border)}
+.sm-name{font-size:13px;font-weight:600;color:var(--cream);display:flex;align-items:center;justify-content:space-between}
+.sm-stat{font-size:11px;color:var(--muted);margin-top:2px}
+.sm-deadline{font-size:11px;color:var(--amber);margin-top:3px;display:flex;align-items:center;gap:4px}
+.sm-deadline.ok{color:#6fcf97}
+.sm-bar{height:3px;background:var(--bg3);border-radius:2px;margin-top:8px;overflow:hidden}
+.sm-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--gold),var(--gold2))}
+.set-deadline-btn{font-size:10px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;padding:3px 0 0;text-decoration:underline;text-underline-offset:2px}
+.set-deadline-btn:hover{color:var(--gold)}
+.deadline-input-row{display:flex;align-items:center;gap:6px;margin-top:5px}
+.deadline-input-row input{flex:1;padding:4px 8px;border-radius:6px;border:1px solid rgba(200,153,78,.4);background:var(--bg3);color:var(--cream);font-size:11px;font-family:'DM Sans',sans-serif;outline:none}
+.deadline-input-row button{padding:4px 8px;border-radius:6px;border:none;background:var(--gold);color:var(--bg);font-size:10px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.sidebar-art{margin-top:4px;border-radius:18px;overflow:hidden;position:relative;height:150px;border:1px solid var(--border)}
+.sidebar-art img{width:100%;height:100%;object-fit:cover;filter:brightness(.6)saturate(.8)}
+.sidebar-art-text{position:absolute;inset:0;background:linear-gradient(to top,rgba(18,11,9,.9) 0%,transparent 60%);display:flex;flex-direction:column;justify-content:flex-end;padding:14px 12px}
+.sidebar-art-title{font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:600;color:var(--cream)}
+.sidebar-art-sub{font-size:10px;color:var(--muted);margin-top:2px}
+
+/* Admin main */
+.admin-main{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r3);overflow:hidden;display:flex;flex-direction:column}
+.admin-head{padding:20px 24px;border-bottom:1px solid var(--border2);display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.admin-month-title{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;color:var(--cream)}
+.admin-month-sub{font-size:12px;color:var(--muted);margin-top:3px}
+.admin-gen-btns{display:flex;gap:7px;flex-shrink:0;flex-wrap:wrap}
+.gen-btn{display:flex;align-items:center;gap:6px;padding:9px 14px;border-radius:var(--r2);border:1px solid var(--border);background:var(--bg3);color:var(--cream);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap}
+.gen-btn:hover{border-color:rgba(200,153,78,.4);color:var(--gold)}
+.gen-btn-primary{background:linear-gradient(135deg,var(--burg2),var(--burg));border-color:transparent;color:white;font-weight:600}
+.gen-btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(126,31,44,.4)}
+
+/* Admin deadline alert in header */
+.admin-dl-alert{display:flex;align-items:center;gap:10px;padding:10px 24px;background:rgba(212,136,10,.08);border-bottom:1px solid rgba(212,136,10,.2)}
+.adl-icon{font-size:16px}
+.adl-text{font-size:12px;color:var(--gold2);flex:1}
+.adl-text strong{font-weight:600}
+.adl-edit{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:underline;text-underline-offset:2px}
+.adl-edit:hover{color:var(--gold)}
+
+/* Stats row */
+.admin-stats{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border2)}
+.admin-stat{padding:14px 20px;border-right:1px solid var(--border2)}
+.admin-stat:last-child{border-right:none}
+.as-val{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:var(--gold)}
+.as-lbl{font-size:11px;color:var(--muted);margin-top:1px}
+
+/* People list */
+.people-list{padding:12px}
+.section-micro{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);padding:4px 4px 10px;display:flex;align-items:center;justify-content:space-between}
+.person-row{display:grid;grid-template-columns:1fr auto auto auto;align-items:center;gap:14px;padding:12px 12px;border-radius:var(--r2);border:1px solid transparent;cursor:pointer;transition:all .15s;margin-bottom:4px}
+.person-row:hover{background:rgba(200,153,78,.05);border-color:var(--border2)}
+.p-info{display:flex;align-items:center;gap:11px}
+.p-av{width:36px;height:36px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:white;flex-shrink:0}
+.p-name{font-size:13px;font-weight:600;color:var(--cream)}
+.p-nik{font-size:11px;color:var(--muted);font-family:monospace;margin-top:1px}
+.p-events{font-size:12px;color:var(--muted);text-align:right;white-space:nowrap}
+.p-events strong{color:var(--cream)}
+.p-jam-val{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--gold);text-align:right;line-height:1}
+.p-jam-lbl{font-size:10px;color:var(--muted)}
+.p-status{display:flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.st-ok{background:rgba(58,158,95,.12);color:#6fcf97;border:1px solid rgba(58,158,95,.25)}
+.st-draft{background:var(--amberbg);color:var(--gold2);border:1px solid rgba(212,136,10,.22)}
+.st-empty{background:rgba(150,150,150,.1);color:#888;border:1px solid rgba(150,150,150,.2)}
+.st-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+/* MoO section */
+.moo-section{border-top:1px solid var(--border2);padding:12px}
+.moo-group{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 13px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:7px;cursor:pointer;transition:all .15s}
+.moo-group:hover{border-color:rgba(200,153,78,.4)}
+.moo-group:last-of-type{margin-bottom:0}
+.mg-name{font-size:13px;font-weight:600;color:var(--cream)}
+.mg-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.mg-btns{display:flex;gap:5px;flex-shrink:0}
+.mg-btn{padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;font-family:'DM Sans',sans-serif}
+.mg-btn:hover{border-color:rgba(200,153,78,.4);color:var(--gold)}
+.mg-btn-p{background:rgba(200,153,78,.12);border-color:rgba(200,153,78,.3);color:var(--gold)}
+.moo-add{margin-top:8px;padding:9px 13px;border:1.5px dashed var(--border);border-radius:var(--r2);text-align:center;cursor:pointer;font-size:13px;color:var(--muted);transition:all .2s}
+.moo-add:hover{border-color:rgba(200,153,78,.4);color:var(--gold)}
+
+/* ── ghost dashboard ── */
+.ghost-bg{position:absolute;inset:0;z-index:0;padding:24px;opacity:.28;filter:blur(1.5px);pointer-events:none}
+
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<nav class="screen-nav">
+  <div class="logo">✦ Lembur Mandala</div>
+  <button class="nav-btn active" onclick="show('login')">① Login</button>
+  <button class="nav-btn" onclick="show('dashboard')">② Dashboard</button>
+  <button class="nav-btn" onclick="show('panel')">③ Add Event</button>
+  <button class="nav-btn" onclick="show('history')">④ History Bulan</button>
+  <button class="nav-btn" onclick="show('admin')">⑤ Admin</button>
+  <span class="nav-label">Design Mockup — click tabs to switch</span>
+</nav>
+
+<!-- ══════════════════════════════════════════════════════════
+     ① LOGIN
+══════════════════════════════════════════════════════════ -->
+<div class="screen active" id="s-login">
+  <div class="login-wrap">
+    <div class="login-art">
+      <img src="https://i.pinimg.com/736x/b9/48/63/b948638e173fd8112d2c0d69d576128b.jpg" alt="">
+      <div class="login-art-overlay"></div>
+      <div class="login-art-content">
+        <div class="art-badge">✦ Mandala Project</div>
+        <div class="art-title">Catat Lembur<br>kamu <em>dengan mudah.</em></div>
+        <div class="art-sub">Platform pencatatan lembur bulanan untuk tim Mandala. Submit, pantau, dan generate laporan — semua di satu tempat.</div>
+        <div class="art-dots"><span class="on"></span><span></span><span></span></div>
+      </div>
+    </div>
+    <div class="login-form-panel">
+      <div class="login-brand">
+        <div class="login-brand-icon">🌙</div>
+        <div>
+          <div class="login-brand-name">Lembur Mandala</div>
+          <div class="login-brand-sub">Overtime Management System</div>
+        </div>
+      </div>
+      <div class="login-h">Selamat Datang</div>
+      <div class="login-sub">Masuk untuk mencatat lembur bulan ini ✨</div>
+      <div class="form-field">
+        <label class="form-label">Email</label>
+        <div class="input-wrap">
+          <span class="input-icon">✉</span>
+          <input class="form-input" type="email" placeholder="nama@company.com" value="aditya@mandala.id">
+        </div>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Password</label>
+        <div class="input-wrap">
+          <span class="input-icon">🔒</span>
+          <input class="form-input" type="password" value="••••••••">
+        </div>
+      </div>
+      <div class="form-forgot">Lupa password?</div>
+      <button class="btn-primary">Masuk →</button>
+      <div class="login-footer">Masalah login? Hubungi <a>Vania (admin)</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     ② EMPLOYEE DASHBOARD — current month
+══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-dashboard">
+  <div class="dash-bg">
+    <img class="dash-bg-art" src="https://i.pinimg.com/736x/b2/98/80/b2988072879af114fc3e95528bc8a42e.jpg" alt="">
+    <div style="max-width:1100px;margin:0 auto;position:relative;z-index:1">
+
+      <!-- Topbar -->
+      <div class="topbar">
+        <div class="t-logo">✦ Lembur <span>Mandala</span></div>
+        <div class="user-pill">
+          <div class="avatar av-a">A</div>
+          <div><div class="u-name">Aditya Ari Pratama</div><div class="u-nik">NIK 230011</div></div>
+          <button class="btn-logout">Logout</button>
+        </div>
+      </div>
+
+      <!-- ⚠ Deadline alert banner -->
+      <div class="deadline-banner">
+        <div class="dl-icon">⏰</div>
+        <div class="dl-text">
+          <div class="dl-title">Deadline submit Juni 2026: Rabu, 25 Juni 2026 · 10 hari lagi</div>
+          <div class="dl-sub">Pastikan semua event sudah kamu tambahkan sebelum deadline. Kamu masih bisa edit setelah submit.</div>
+        </div>
+        <button class="dl-dismiss">Oke, mengerti</button>
+      </div>
+
+      <!-- Bento grid -->
+      <div class="bento bento-main" style="grid-template-columns:1fr 1fr 1fr">
+
+        <!-- Hero -->
+        <div class="card card-hero card-pad" style="grid-column:1/2">
+          <img class="stat-hero-art" src="https://i.pinimg.com/736x/cb/75/39/cb753986e9e64022f30f18af44d8846f.jpg" alt="">
+          <div class="stat-hero-badge">📅 Submission Aktif</div>
+          <div class="stat-hero-month">Juni 2026</div>
+          <div class="stat-hero-status">Status: Draft · Bisa edit kapan saja</div>
+          <div class="stat-nums">
+            <div><div class="stat-val">6</div><div class="stat-lbl">Events</div></div>
+            <div><div class="stat-val">19.5j</div><div class="stat-lbl">Total Durasi</div></div>
+            <div><div class="stat-val">30.0j</div><div class="stat-lbl">Kompensasi</div></div>
+            <div><div class="stat-val">3</div><div class="stat-lbl">Projects</div></div>
+          </div>
+        </div>
+
+        <!-- Mini stat -->
+        <div class="card card-pad" style="display:flex;flex-direction:column;justify-content:space-between">
+          <div style="font-size:22px;margin-bottom:6px">📦</div>
+          <div>
+            <div class="stat-mini-val">5</div>
+            <div class="stat-mini-lbl">Bulan terakhir submit</div>
+            <div class="stat-mini-sub">Terakhir: Mei 2026 ✓</div>
+          </div>
+          <div style="color:var(--gold);opacity:.3;font-size:10px;letter-spacing:4px">✦ ✧ ✦</div>
+        </div>
+
+        <!-- Actions -->
+        <div class="card card-pad" style="display:flex;flex-direction:column">
+          <div class="action-title">Quick Actions</div>
+          <button class="action-btn ab-gold" onclick="show('panel')">
+            <span class="ab-icon">＋</span>
+            <div><div>Tambah Event</div><div class="ab-sub">Isi form lembur baru</div></div>
+          </button>
+          <button class="action-btn ab-dark">
+            <span class="ab-icon">📂</span>
+            <div><div>Upload .xlsx</div><div class="ab-sub">Import dari file Excel</div></div>
+          </button>
+          <button class="action-btn ab-dark">
+            <span class="ab-icon">📋</span>
+            <div><div>Copy dari bulan lalu</div><div class="ab-sub">Duplikasi event Mei 2026</div></div>
+          </button>
+          <div class="divider"></div>
+          <button class="action-btn ab-red" style="margin-bottom:0">
+            <span class="ab-icon">✓</span>
+            <div><div>Submit Bulan Ini</div><div class="ab-sub">Kirim ke admin</div></div>
+          </button>
+        </div>
+
+        <!-- Event List — with month tabs -->
+        <div class="card" style="grid-column:1/3">
+          <div class="ev-head">
+            <div class="ev-title">Daftar Event Lembur</div>
+            <div class="ev-count">6 events</div>
+          </div>
+          <!-- Month tabs -->
+          <div style="padding:12px 14px 0;border-bottom:1px solid var(--border2)">
+            <div class="month-tabs">
+              <button class="month-tab active">
+                <span class="tab-bulan">Juni 2026</span>
+                <span class="tab-badge tab-active-now">Draft</span>
+              </button>
+              <button class="month-tab" onclick="show('history')">
+                <span class="tab-bulan">Mei 2026</span>
+                <span class="tab-badge tab-submitted">✓ Submitted</span>
+              </button>
+              <button class="month-tab" onclick="show('history')">
+                <span class="tab-bulan">April 2026</span>
+                <span class="tab-badge tab-submitted">✓ Submitted</span>
+              </button>
+              <button class="month-tab" onclick="show('history')">
+                <span class="tab-bulan">Maret 2026</span>
+                <span class="tab-badge tab-submitted">✓ Submitted</span>
+              </button>
+              <button class="month-tab" onclick="show('history')">
+                <span class="tab-bulan">Feb 2026</span>
+                <span class="tab-badge tab-submitted">✓ Submitted</span>
+              </button>
+            </div>
+          </div>
+          <div class="ev-body">
+            <div class="ev-item">
+              <div class="ev-date"><div class="ev-day">17</div><div class="ev-mon">Apr</div></div>
+              <div><div class="ev-proj">CAMBER BMS</div><div class="ev-desc">DRC Onsite CMS BMS 2026 Preparation</div><div class="ev-tags"><span class="tag tag-wfo">WFO</span><span class="tag tag-wknd">Weekend</span></div></div>
+              <div class="ev-jam">21:00–00:00<strong>3.0j</strong></div>
+              <div class="ev-acts"><button class="ev-btn">⧉</button><button class="ev-btn">✎</button><button class="ev-btn ev-btn-del">✕</button></div>
+            </div>
+            <div class="ev-item">
+              <div class="ev-date"><div class="ev-day">18</div><div class="ev-mon">Apr</div></div>
+              <div><div class="ev-proj">CAMBER BMS</div><div class="ev-desc">DRC Onsite CMS BMS 2026 Testing Internal & Eksternal</div><div class="ev-tags"><span class="tag tag-wfo">WFO</span><span class="tag tag-wknd">Weekend ×2</span></div></div>
+              <div class="ev-jam">00:00–11:00<strong>22.0j</strong></div>
+              <div class="ev-acts"><button class="ev-btn">⧉</button><button class="ev-btn">✎</button><button class="ev-btn ev-btn-del">✕</button></div>
+            </div>
+            <div class="ev-item">
+              <div class="ev-date"><div class="ev-day">22</div><div class="ev-mon">Apr</div></div>
+              <div><div class="ev-proj">CAMBER BMS</div><div class="ev-desc">Assist deploy production Optimasi payroll pending</div><div class="ev-tags"><span class="tag tag-wfh">WFH</span></div></div>
+              <div class="ev-jam">21:00–22:15<strong>1.25j</strong></div>
+              <div class="ev-acts"><button class="ev-btn">⧉</button><button class="ev-btn">✎</button><button class="ev-btn ev-btn-del">✕</button></div>
+            </div>
+            <div class="ev-item">
+              <div class="ev-date"><div class="ev-day">05</div><div class="ev-mon">Mei</div></div>
+              <div><div class="ev-proj">RECON QNB</div><div class="ev-desc">Assist deploy production revamp Part 1</div><div class="ev-tags"><span class="tag tag-wfh">WFH</span></div></div>
+              <div class="ev-jam">18:00–19:30<strong>1.5j</strong></div>
+              <div class="ev-acts"><button class="ev-btn">⧉</button><button class="ev-btn">✎</button><button class="ev-btn ev-btn-del">✕</button></div>
+            </div>
+            <div class="ev-item">
+              <div class="ev-date"><div class="ev-day">06</div><div class="ev-mon">Mei</div></div>
+              <div><div class="ev-proj">CAMBER BMS</div><div class="ev-desc">Assist deploy production SKN dan DMS</div><div class="ev-tags"><span class="tag tag-wfh">WFH</span></div></div>
+              <div class="ev-jam">21:00–23:15<strong>2.25j</strong></div>
+              <div class="ev-acts"><button class="ev-btn">⧉</button><button class="ev-btn">✎</button><button class="ev-btn ev-btn-del">✕</button></div>
+            </div>
+            <div class="ev-item">
+              <div class="ev-date"><div class="ev-day">10</div><div class="ev-mon">Jun</div></div>
+              <div><div class="ev-proj">BKC</div><div class="ev-desc">Standby monitoring transaksi BKC production</div><div class="ev-tags"><span class="tag tag-wfh">WFH</span><span class="tag tag-stnby">Standby ×0.5</span></div></div>
+              <div class="ev-jam">22:00–00:00<strong>1.0j</strong></div>
+              <div class="ev-acts"><button class="ev-btn">⧉</button><button class="ev-btn">✎</button><button class="ev-btn ev-btn-del">✕</button></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress / Timeline -->
+        <div class="card card-pad">
+          <div class="tl-title">Submission Progress</div>
+          <div class="tl-item"><div class="tl-dot done">✓</div><div><div class="tl-lbl">Entry dibuat</div><div class="tl-sub">6 events tercatat</div></div></div>
+          <div class="tl-item"><div class="tl-dot now">●</div><div><div class="tl-lbl">Review & edit</div><div class="tl-sub">Masih bisa ditambah/diedit</div></div></div>
+          <div class="tl-item"><div class="tl-dot">○</div><div><div class="tl-lbl">Submit ke admin</div><div class="tl-sub" style="color:var(--amber)">⏰ Deadline: 25 Jun 2026</div></div></div>
+          <div class="tl-item"><div class="tl-dot">○</div><div><div class="tl-lbl">Laporan dibuat</div><div class="tl-sub">Admin generate DOCX</div></div></div>
+          <div style="margin-top:14px">
+            <div class="prog-label"><span>Tim sudah submit</span><span>3/6 orang</span></div>
+            <div class="prog-track"><div class="prog-fill" style="width:50%"></div></div>
+          </div>
+          <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border2)">
+            <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Bulan Sebelumnya</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);cursor:pointer" onclick="show('history')">
+                <span style="font-size:12px;color:var(--cream)">Mei 2026</span>
+                <span style="font-size:11px;color:#6fcf97;font-weight:600">✓ Submitted →</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);cursor:pointer" onclick="show('history')">
+                <span style="font-size:12px;color:var(--cream)">April 2026</span>
+                <span style="font-size:11px;color:#6fcf97;font-weight:600">✓ Submitted →</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);cursor:pointer" onclick="show('history')">
+                <span style="font-size:12px;color:var(--cream)">Maret 2026</span>
+                <span style="font-size:11px;color:#6fcf97;font-weight:600">✓ Submitted →</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     ③ ADD EVENT PANEL
+══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-panel">
+  <div class="panel-bg">
+    <div class="ghost-bg">
+      <div style="background:var(--bg);padding:20px;height:100%">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;max-width:1100px;margin:0 auto">
+          <div style="background:var(--burg);border-radius:28px;height:190px;opacity:.5"></div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:28px;height:190px;opacity:.5"></div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:28px;height:190px;opacity:.5"></div>
+        </div>
+        <div style="margin-top:14px;max-width:1100px;margin:14px auto 0;background:var(--bg2);border:1px solid var(--border);border-radius:28px;height:330px;opacity:.5"></div>
+      </div>
+    </div>
+    <div class="panel-backdrop"></div>
+    <div class="slide-panel">
+      <div class="panel-head">
+        <div><div class="panel-title">Tambah Event Lembur</div><div class="panel-sub">Juni 2026 · Aditya Ari Pratama</div></div>
+        <button class="panel-close" onclick="show('dashboard')">✕</button>
+      </div>
+      <div class="panel-body">
+        <div class="field-group">
+          <label class="field-label">Tanggal <span class="field-hint">— otomatis cek akhir pekan</span></label>
+          <input class="date-input" type="date" value="2026-06-15">
+          <div style="margin-top:8px;padding:8px 12px;background:#fff8f0;border:1px solid #f0d8b0;border-radius:8px;font-size:12px;color:#8a6020;display:flex;align-items:center;gap:6px">
+            ☀️ <strong>Hari biasa</strong> — multiplier normal (×1)
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Project / Event</label>
+          <div class="project-pills">
+            <div class="proj-pill sel">CAMBER BMS</div>
+            <div class="proj-pill">CAMBER KALTENG</div>
+            <div class="proj-pill">BKC</div>
+            <div class="proj-pill">RECON QNB</div>
+            <div class="proj-pill">ATM RECON</div>
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Deskripsi Kegiatan <span class="field-hint">— bisa lebih dari satu</span></label>
+          <div class="kegiatan-list" id="kegiatan-list">
+            <div class="kegiatan-row">
+              <div class="kegiatan-row-num">1</div>
+              <textarea placeholder="Deskripsi kegiatan lembur…">Assist deploy production SKN dan DMS</textarea>
+            </div>
+            <div class="kegiatan-row">
+              <div class="kegiatan-row-num">2</div>
+              <textarea placeholder="Deskripsi kegiatan lembur…">Check log setelah deploy</textarea>
+              <button class="kegiatan-del" onclick="delKegiatan(this)" title="Hapus baris">✕</button>
+            </div>
+          </div>
+          <button class="kegiatan-add-btn" onclick="addKegiatan()">＋ Tambah Kegiatan</button>
+          <div class="chips" style="margin-top:10px">
+            <div class="chip" onclick="addKegiatanChip(this)">Standby Zoom</div>
+            <div class="chip" onclick="addKegiatanChip(this)">Execute Deployment</div>
+            <div class="chip" onclick="addKegiatanChip(this)">Check Log</div>
+            <div class="chip" onclick="addKegiatanChip(this)">Make Query</div>
+            <div class="chip" onclick="addKegiatanChip(this)">Execute Queries</div>
+            <div class="chip" onclick="addKegiatanChip(this)">Standby Discord</div>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px">💡 Klik chip untuk tambah baris kegiatan baru</div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Waktu Lembur</label>
+          <div class="time-row">
+            <div><div class="time-lbl">Dari Jam</div><input class="time-input" type="time" value="21:00"><div class="presets"><span class="preset">18:00</span><span class="preset">20:00</span><span class="preset">21:00</span><span class="preset">22:00</span></div></div>
+            <div><div class="time-lbl">Sampai Jam</div><input class="time-input" type="time" value="23:15"><div class="presets"><span class="preset">00:00</span><span class="preset">01:00</span><span class="preset">07:00</span><span class="preset">11:00</span></div></div>
+          </div>
+          <div class="dur-box">
+            <div style="text-align:center">
+              <input class="dur-input" type="number" min="0" max="24" step="0.25" value="2.25" title="Bisa diedit manual">
+              <div class="dur-edit-hint">✎ bisa edit manual</div>
+              <div class="dur-lbl">Durasi (jam)</div>
+            </div>
+            <div class="dur-div"></div>
+            <div><div class="dur-val">×1.0</div><div class="dur-lbl">Multiplier</div></div>
+            <div class="dur-div"></div>
+            <div><div class="dur-val">2.25</div><div class="dur-lbl">Kompensasi</div></div>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:8px">💡 Durasi dihitung otomatis dari jam, tapi bisa kamu ubah manual jika perlu.</div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Kondisi</label>
+          <div class="toggle-row">
+            <button class="tog"><div class="tog-dot"></div>Akhir Pekan / Merah</button>
+            <button class="tog"><div class="tog-dot"></div>Standby</button>
+            <button class="tog on-wfo"><div class="tog-dot"></div>WFO</button>
+          </div>
+          <div style="margin-top:9px;font-size:12px;color:var(--muted)">Akhir pekan = ×2 · Standby = ×0.5 · Keduanya = ×1</div>
+        </div>
+        <div style="height:6px"></div>
+      </div>
+      <div class="panel-foot">
+        <button class="btn-save">Simpan Event ✓</button>
+        <button class="btn-cancel" onclick="show('dashboard')">Batal</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     ④ HISTORY — past month view (read-only)
+══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-history">
+  <div class="dash-bg">
+    <img class="dash-bg-art" src="https://i.pinimg.com/736x/47/e9/5a/47e95ac6318e1d895b2fb34b4843763e.jpg" alt="">
+    <div style="max-width:1100px;margin:0 auto;position:relative;z-index:1">
+
+      <div class="topbar">
+        <div class="t-logo">✦ Lembur <span>Mandala</span></div>
+        <div class="user-pill">
+          <div class="avatar av-a">A</div>
+          <div><div class="u-name">Aditya Ari Pratama</div><div class="u-nik">NIK 230011</div></div>
+          <button class="btn-logout">Logout</button>
+        </div>
+      </div>
+
+      <!-- Submitted success banner (no deadline alert for past months) -->
+      <div class="deadline-banner done">
+        <div class="dl-icon">✅</div>
+        <div class="dl-text">
+          <div class="dl-title">Mei 2026 — Sudah Submitted pada 28 Mei 2026</div>
+          <div class="dl-sub">Data ini sudah diterima admin. Hubungi Vania jika ada koreksi.</div>
+        </div>
+      </div>
+
+      <!-- Month tabs -->
+      <div class="month-tabs" style="margin-bottom:14px">
+        <button class="month-tab" onclick="show('dashboard')">
+          <span class="tab-bulan">Juni 2026</span>
+          <span class="tab-badge tab-active-now">Draft</span>
+        </button>
+        <button class="month-tab active">
+          <span class="tab-bulan">Mei 2026</span>
+          <span class="tab-badge tab-submitted">✓ Submitted</span>
+        </button>
+        <button class="month-tab">
+          <span class="tab-bulan">April 2026</span>
+          <span class="tab-badge tab-submitted">✓ Submitted</span>
+        </button>
+        <button class="month-tab">
+          <span class="tab-bulan">Maret 2026</span>
+          <span class="tab-badge tab-submitted">✓ Submitted</span>
+        </button>
+        <button class="month-tab">
+          <span class="tab-bulan">Feb 2026</span>
+          <span class="tab-badge tab-submitted">✓ Submitted</span>
+        </button>
+      </div>
+
+      <div class="bento" style="grid-template-columns:1fr 280px;gap:14px">
+
+        <!-- Event list — read only -->
+        <div class="card">
+          <div class="ev-head">
+            <div>
+              <div class="ev-title">Mei 2026 — Event Lembur</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:3px">5 events · 28.33j kompensasi</div>
+            </div>
+            <div class="submitted-stamp">✓ Submitted</div>
+          </div>
+
+          <!-- Read-only info bar -->
+          <div class="readonly-banner">
+            <span>🔒</span>
+            <span><strong>Mode baca saja.</strong> Submission ini sudah dikirim ke admin. Hubungi Vania untuk koreksi.</span>
+          </div>
+
+          <div class="ev-body">
+            <div class="ev-item" style="cursor:default">
+              <div class="ev-date"><div class="ev-day">17</div><div class="ev-mon">Apr</div></div>
+              <div><div class="ev-proj">CAMBER BMS</div><div class="ev-desc">DRC Onsite CMS BMS 2026 Preparation</div><div class="ev-tags"><span class="tag tag-wfo">WFO</span><span class="tag tag-wknd">Weekend</span></div></div>
+              <div class="ev-jam">21:00–00:00<strong>3.0j</strong></div>
+              <div class="ev-acts"><button class="ev-btn" title="Copy ke bulan ini" style="color:var(--gold)">⧉</button></div>
+            </div>
+            <div class="ev-item" style="cursor:default">
+              <div class="ev-date"><div class="ev-day">18</div><div class="ev-mon">Apr</div></div>
+              <div><div class="ev-proj">CAMBER BMS</div><div class="ev-desc">DRC Onsite CMS BMS 2026 Testing Internal & Eksternal</div><div class="ev-tags"><span class="tag tag-wfo">WFO</span><span class="tag tag-wknd">Weekend ×2</span></div></div>
+              <div class="ev-jam">00:00–11:00<strong>22.0j</strong></div>
+              <div class="ev-acts"><button class="ev-btn" style="color:var(--gold)">⧉</button></div>
+            </div>
+            <div class="ev-item" style="cursor:default">
+              <div class="ev-date"><div class="ev-day">05</div><div class="ev-mon">Mei</div></div>
+              <div><div class="ev-proj">RECON QNB</div><div class="ev-desc">Assist deploy production revamp Part 1</div><div class="ev-tags"><span class="tag tag-wfh">WFH</span></div></div>
+              <div class="ev-jam">18:00–19:30<strong>1.5j</strong></div>
+              <div class="ev-acts"><button class="ev-btn" style="color:var(--gold)">⧉</button></div>
+            </div>
+            <div class="ev-item" style="cursor:default">
+              <div class="ev-date"><div class="ev-day">06</div><div class="ev-mon">Mei</div></div>
+              <div><div class="ev-proj">CAMBER BMS</div><div class="ev-desc">Assist deploy production SKN dan DMS</div><div class="ev-tags"><span class="tag tag-wfh">WFH</span></div></div>
+              <div class="ev-jam">21:00–23:15<strong>2.25j</strong></div>
+              <div class="ev-acts"><button class="ev-btn" style="color:var(--gold)">⧉</button></div>
+            </div>
+            <div class="ev-item" style="cursor:default">
+              <div class="ev-date"><div class="ev-day">20</div><div class="ev-mon">Mei</div></div>
+              <div><div class="ev-proj">BKC</div><div class="ev-desc">Standby monitoring BKC production malam</div><div class="ev-tags"><span class="tag tag-wfh">WFH</span><span class="tag tag-stnby">Standby ×0.5</span></div></div>
+              <div class="ev-jam">22:00–00:00<strong>1.0j</strong></div>
+              <div class="ev-acts"><button class="ev-btn" style="color:var(--gold)">⧉</button></div>
+            </div>
+          </div>
+          <div style="padding:12px 14px 14px;border-top:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:12px;color:var(--muted)">⧉ = Copy event ini ke submission Juni 2026 kamu</div>
+            <button onclick="show('dashboard')" style="padding:7px 16px;border-radius:20px;border:1px solid var(--border);background:var(--bg3);color:var(--cream);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">← Kembali ke Juni</button>
+          </div>
+        </div>
+
+        <!-- Side: summary + all months nav -->
+        <div style="display:flex;flex-direction:column;gap:12px">
+
+          <!-- Monthly summary card -->
+          <div class="card card-pad">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:14px">Ringkasan Mei 2026</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+              <div><div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:var(--gold)">5</div><div style="font-size:11px;color:var(--muted)">Events</div></div>
+              <div><div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:var(--gold)">28.33j</div><div style="font-size:11px;color:var(--muted)">Kompensasi</div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px;font-size:12px">
+              <div style="display:flex;justify-content:space-between;padding:6px 10px;background:var(--bg3);border-radius:8px">
+                <span style="color:var(--muted)">CAMBER BMS</span><span style="color:var(--cream);font-weight:600">25.25j</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:6px 10px;background:var(--bg3);border-radius:8px">
+                <span style="color:var(--muted)">RECON QNB</span><span style="color:var(--cream);font-weight:600">1.5j</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:6px 10px;background:var(--bg3);border-radius:8px">
+                <span style="color:var(--muted)">BKC</span><span style="color:var(--cream);font-weight:600">1.0j</span>
+              </div>
+            </div>
+            <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border2);font-size:11px;color:var(--muted)">
+              Submitted: 28 Mei 2026 pukul 14:32
+            </div>
+          </div>
+
+          <!-- All months nav -->
+          <div class="card card-pad">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px">Semua Bulan</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Hanya bulan dengan data yang ditampilkan.</div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <div onclick="show('dashboard')" style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--bg3);border-radius:9px;border:1px solid var(--border);cursor:pointer">
+                <span style="font-size:12px;color:var(--cream);font-weight:600">Juni 2026</span>
+                <span style="font-size:10px;color:var(--amber);font-weight:600;background:var(--amberbg);padding:2px 8px;border-radius:20px">Draft</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(200,153,78,.08);border-radius:9px;border:1px solid rgba(200,153,78,.3);cursor:pointer">
+                <span style="font-size:12px;color:var(--gold);font-weight:600">Mei 2026</span>
+                <span style="font-size:10px;color:#6fcf97;font-weight:600;background:rgba(58,158,95,.12);padding:2px 8px;border-radius:20px">✓ Viewed</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--bg3);border-radius:9px;border:1px solid var(--border);cursor:pointer">
+                <span style="font-size:12px;color:var(--cream)">April 2026</span>
+                <span style="font-size:10px;color:#6fcf97;font-weight:600;background:rgba(58,158,95,.12);padding:2px 8px;border-radius:20px">✓ Submit</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--bg3);border-radius:9px;border:1px solid var(--border);cursor:pointer">
+                <span style="font-size:12px;color:var(--cream)">Maret 2026</span>
+                <span style="font-size:10px;color:#6fcf97;font-weight:600;background:rgba(58,158,95,.12);padding:2px 8px;border-radius:20px">✓ Submit</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--bg3);border-radius:9px;border:1px solid var(--border);cursor:pointer">
+                <span style="font-size:12px;color:var(--cream)">Feb 2026</span>
+                <span style="font-size:10px;color:#6fcf97;font-weight:600;background:rgba(58,158,95,.12);padding:2px 8px;border-radius:20px">✓ Submit</span>
+              </div>
+              <!-- Jan 2026 tidak muncul karena tidak ada data -->
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     ⑤ ADMIN DASHBOARD
+══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-admin">
+  <div class="admin-bg">
+    <div class="admin-grid">
+
+      <div class="admin-topbar">
+        <div class="admin-logo">✦ Lembur <span>Mandala</span> — Admin</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="admin-badge">👑 Vania Sanjaya · Tech Lead</div>
+          <button class="btn-logout">Logout</button>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <div class="sidebar-section">Bulan</div>
+
+        <!-- Active month with deadline set -->
+        <div class="sidebar-month active">
+          <div class="sm-name">
+            Juni 2026
+            <span style="font-size:10px;font-weight:600;background:var(--amberbg);color:var(--gold2);padding:2px 8px;border-radius:20px">4 orang</span>
+          </div>
+          <div class="sm-stat">4 orang sudah submit</div>
+          <div class="sm-deadline">⏰ Deadline: 25 Jun 2026</div>
+          <div class="sm-bar"><div class="sm-fill" style="width:67%"></div></div>
+          <button class="set-deadline-btn" onclick="toggleDL(this)">✎ ubah deadline</button>
+          <div class="deadline-input-row" style="display:none">
+            <input type="date" value="2026-06-25">
+            <button onclick="saveDL(this)">Simpan</button>
+          </div>
+        </div>
+
+        <div class="sidebar-month">
+          <div class="sm-name">Mei 2026 <span style="font-size:10px;color:#6fcf97">✓</span></div>
+          <div class="sm-stat">6 orang submit</div>
+          <div class="sm-deadline ok">✓ Deadline: 28 Mei 2026</div>
+          <div class="sm-bar"><div class="sm-fill" style="width:100%"></div></div>
+          <button class="set-deadline-btn" onclick="toggleDL(this)">✎ ubah deadline</button>
+          <div class="deadline-input-row" style="display:none"><input type="date" value="2026-05-28"><button onclick="saveDL(this)">Simpan</button></div>
+        </div>
+
+        <div class="sidebar-month">
+          <div class="sm-name">April 2026</div>
+          <div class="sm-stat">5 orang submit</div>
+          <div class="sm-deadline ok">✓ Deadline: 30 Apr 2026</div>
+          <div class="sm-bar"><div class="sm-fill" style="width:83%"></div></div>
+          <button class="set-deadline-btn" onclick="toggleDL(this)">✎ ubah deadline</button>
+          <div class="deadline-input-row" style="display:none"><input type="date" value="2026-04-30"><button onclick="saveDL(this)">Simpan</button></div>
+        </div>
+
+        <div class="sidebar-month">
+          <div class="sm-name">Maret 2026</div>
+          <div class="sm-stat">4 orang submit</div>
+          <div class="sm-deadline" style="color:var(--muted)">— Tidak ada deadline</div>
+          <div class="sm-bar"><div class="sm-fill" style="width:67%"></div></div>
+          <button class="set-deadline-btn" onclick="toggleDL(this)">＋ set deadline</button>
+          <div class="deadline-input-row" style="display:none"><input type="date"><button onclick="saveDL(this)">Simpan</button></div>
+        </div>
+
+        <div class="sidebar-month">
+          <div class="sm-name">Februari 2026 <span style="font-size:10px;color:#6fcf97">✓</span></div>
+          <div class="sm-stat">5 orang submit</div>
+          <div class="sm-deadline ok">✓ Deadline: 25 Feb 2026</div>
+          <div class="sm-bar"><div class="sm-fill" style="width:100%"></div></div>
+          <button class="set-deadline-btn" onclick="toggleDL(this)">✎ ubah deadline</button>
+          <div class="deadline-input-row" style="display:none"><input type="date" value="2026-02-25"><button onclick="saveDL(this)">Simpan</button></div>
+        </div>
+
+        <div class="sidebar-art">
+          <img src="https://i.pinimg.com/736x/0d/9c/d0/0d9cd0fe3cc52b83c3181815c3020db9.jpg" alt="">
+          <div class="sidebar-art-text">
+            <div class="sidebar-art-title">Collect the <em style="color:var(--gold)">Reports</em> ✦</div>
+            <div class="sidebar-art-sub">Generate laporan bulan ini</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main -->
+      <div class="admin-main">
+        <div class="admin-head">
+          <div>
+            <div class="admin-month-title">Juni 2026</div>
+            <div class="admin-month-sub">4 orang sudah submit · Periode: 1–30 Juni 2026</div>
+          </div>
+          <div class="admin-gen-btns">
+            <button class="gen-btn">📄 Laporan Lembur .docx</button>
+            <button class="gen-btn gen-btn-primary">✦ Generate MoO .docx</button>
+          </div>
+        </div>
+
+        <!-- Deadline alert inside admin — editable -->
+        <div class="admin-dl-alert">
+          <span class="adl-icon">⏰</span>
+          <div class="adl-text"><strong>Deadline submit Juni 2026:</strong> Rabu, 25 Juni 2026 · 10 hari lagi · belum submit: Aditya, Zamzam</div>
+          <button class="adl-edit" onclick="toggleDL(document.querySelector('.sidebar-month.active .set-deadline-btn'))">✎ ubah</button>
+        </div>
+
+        <div class="admin-stats">
+          <div class="admin-stat"><div class="as-val">6</div><div class="as-lbl">Total Orang</div></div>
+          <div class="admin-stat"><div class="as-val">28</div><div class="as-lbl">Total Events</div></div>
+          <div class="admin-stat"><div class="as-val">84.5j</div><div class="as-lbl">Total Durasi</div></div>
+          <div class="admin-stat"><div class="as-val">4</div><div class="as-lbl">MoO Groups</div></div>
+        </div>
+
+        <div class="people-list">
+          <div class="section-micro">
+            SUBMISSION STATUS
+            <span style="font-size:10px;color:var(--muted);font-weight:400">Klik nama untuk lihat events</span>
+          </div>
+
+          <div class="person-row">
+            <div class="p-info"><div class="p-av av-v">V</div><div><div class="p-name">Vania Sanjaya</div><div class="p-nik">NIK 170068</div></div></div>
+            <div class="p-events"><strong>8</strong> events</div>
+            <div><div class="p-jam-val">12.5j</div><div class="p-jam-lbl">kompensasi</div></div>
+            <div class="p-status st-ok"><span class="st-dot"></span>Submitted</div>
+          </div>
+          <div class="person-row">
+            <div class="p-info"><div class="p-av av-a">A</div><div><div class="p-name">Aditya Ari Pratama</div><div class="p-nik">NIK 230011</div></div></div>
+            <div class="p-events"><strong>6</strong> events</div>
+            <div><div class="p-jam-val">30.0j</div><div class="p-jam-lbl">kompensasi</div></div>
+            <div class="p-status st-draft"><span class="st-dot"></span>Draft</div>
+          </div>
+          <div class="person-row">
+            <div class="p-info"><div class="p-av av-l">L</div><div><div class="p-name">Luqmanul Hakim Aziz</div><div class="p-nik">NIK 210070</div></div></div>
+            <div class="p-events"><strong>5</strong> events</div>
+            <div><div class="p-jam-val">25.3j</div><div class="p-jam-lbl">kompensasi</div></div>
+            <div class="p-status st-ok"><span class="st-dot"></span>Submitted</div>
+          </div>
+          <div class="person-row">
+            <div class="p-info"><div class="p-av av-r">R</div><div><div class="p-name">Rizaldi Andriyana</div><div class="p-nik">NIK 200030</div></div></div>
+            <div class="p-events"><strong>4</strong> events</div>
+            <div><div class="p-jam-val">18.7j</div><div class="p-jam-lbl">kompensasi</div></div>
+            <div class="p-status st-ok"><span class="st-dot"></span>Submitted</div>
+          </div>
+          <div class="person-row">
+            <div class="p-info"><div class="p-av av-z">Z</div><div><div class="p-name">Zamzam Jamaludin Abdullah</div><div class="p-nik">NIK 190082</div></div></div>
+            <div class="p-events"><strong>3</strong> events</div>
+            <div><div class="p-jam-val">9.0j</div><div class="p-jam-lbl">kompensasi</div></div>
+            <div class="p-status st-draft"><span class="st-dot"></span>Draft</div>
+          </div>
+          <div class="person-row">
+            <div class="p-info"><div class="p-av av-zv">Z</div><div><div class="p-name">Zulvan Fadhillah</div><div class="p-nik">NIK 260018</div></div></div>
+            <div class="p-events" style="color:#555">—</div>
+            <div><div class="p-jam-val" style="color:var(--muted)">—</div><div class="p-jam-lbl">kompensasi</div></div>
+            <div class="p-status st-empty"><span class="st-dot"></span>Belum ada</div>
+          </div>
+        </div>
+
+        <div class="moo-section">
+          <div class="section-micro">MoO GROUPS — JUNI 2026</div>
+          <div class="moo-group">
+            <div><div class="mg-name">DRC CAMBER BMS · 17–18 Apr 2026</div><div class="mg-sub">4 peserta · Aditya, Luqman, Rizaldi, Vania</div></div>
+            <div class="mg-btns"><button class="mg-btn">✎ Edit</button><button class="mg-btn mg-btn-p">↓ .docx</button></div>
+          </div>
+          <div class="moo-group">
+            <div><div class="mg-name">Deploy CAMBER BMS · 22 Apr 2026</div><div class="mg-sub">3 peserta · Aditya, Luqman, Vania</div></div>
+            <div class="mg-btns"><button class="mg-btn">✎ Edit</button><button class="mg-btn mg-btn-p">↓ .docx</button></div>
+          </div>
+          <div class="moo-group">
+            <div><div class="mg-name">Deploy RECON QNB · 05 Mei 2026</div><div class="mg-sub">2 peserta · Aditya, Vania</div></div>
+            <div class="mg-btns"><button class="mg-btn">✎ Edit</button><button class="mg-btn mg-btn-p">↓ .docx</button></div>
+          </div>
+          <div class="moo-add">＋ Tambah MoO Group baru</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function show(name){
+  const map={login:'s-login',dashboard:'s-dashboard',panel:'s-panel',history:'s-history',admin:'s-admin'};
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(map[name]).classList.add('active');
+  const names=['login','dashboard','panel','history','admin'];
+  document.querySelectorAll('.nav-btn').forEach((b,i)=>b.classList.toggle('active',names[i]===name));
+  window.scrollTo(0,0);
+}
+function toggleDL(btn){
+  const row=btn.nextElementSibling;
+  const visible=row.style.display!=='none'&&row.style.display!=='';
+  row.style.display=visible?'none':'flex';
+  btn.textContent=visible?(btn.dataset.orig||btn.textContent):'✕ batal';
+  if(!btn.dataset.orig) btn.dataset.orig=btn.textContent.replace('✕ batal','').trim()||'✎ ubah deadline';
+}
+function saveDL(btn){
+  const row=btn.parentElement;
+  row.style.display='none';
+  const setBtn=row.previousElementSibling;
+  setBtn.textContent='✎ ubah deadline';
+}
+
+/* Kegiatan multi-row */
+function addKegiatan(){
+  const list=document.getElementById('kegiatan-list');
+  const n=list.children.length+1;
+  const row=document.createElement('div');
+  row.className='kegiatan-row';
+  row.innerHTML=`<div class="kegiatan-row-num">${n}</div><textarea placeholder="Deskripsi kegiatan lembur…"></textarea><button class="kegiatan-del" onclick="delKegiatan(this)" title="Hapus baris">✕</button>`;
+  list.appendChild(row);
+  row.querySelector('textarea').focus();
+  renumberKegiatan();
+}
+function delKegiatan(btn){
+  btn.closest('.kegiatan-row').remove();
+  renumberKegiatan();
+}
+function addKegiatanChip(el){
+  const list=document.getElementById('kegiatan-list');
+  const n=list.children.length+1;
+  const row=document.createElement('div');
+  row.className='kegiatan-row';
+  row.innerHTML=`<div class="kegiatan-row-num">${n}</div><textarea placeholder="Deskripsi kegiatan lembur…">${el.textContent}</textarea><button class="kegiatan-del" onclick="delKegiatan(this)" title="Hapus baris">✕</button>`;
+  list.appendChild(row);
+  renumberKegiatan();
+}
+function renumberKegiatan(){
+  const rows=document.querySelectorAll('#kegiatan-list .kegiatan-row');
+  rows.forEach((r,i)=>{const num=r.querySelector('.kegiatan-row-num');if(num)num.textContent=i+1});
+  /* first row has no delete button */
+  rows.forEach((r,i)=>{
+    const del=r.querySelector('.kegiatan-del');
+    if(i===0&&del) del.remove();
+    if(i>0&&!del){
+      const d=document.createElement('button');
+      d.className='kegiatan-del';d.title='Hapus baris';d.textContent='✕';
+      d.onclick=function(){delKegiatan(this)};
+      r.appendChild(d);
+    }
+  });
+}
+</script>
+</body>
+</html>

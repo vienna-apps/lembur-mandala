@@ -1,63 +1,51 @@
-export interface Employee {
+export interface Profile {
+  id: string
   nik: string
   nama: string
+  is_admin: boolean
+  username: string         // first name lowercase, used for login
+  gmail: string | null     // optional @daksa.co.id email for password reset
 }
 
-export interface LemburEntry {
-  id?: string
-  nama: string
-  nik: string
-  hari_tanggal: string   // ISO date string
-  project: string        // e.g. "CAMBER - BMS"
-  kegiatan: string       // full description
-  dari_jam: string       // "HH:MM"
-  sampai_jam: string     // "HH:MM"
-  durasi: number         // hours
+export interface Deadline {
+  bulan: string        // "YYYY-MM"
+  deadline_date: string | null  // ISO date string
+}
+
+export interface LemburMonth {
+  id: string
+  user_id: string
+  bulan: string        // "YYYY-MM"
+  status: 'draft' | 'submitted'
+  submitted_at: string | null
+  created_at: string
+  // joined
+  profile?: Profile
+}
+
+export interface LemburEvent {
+  id: string
+  month_id: string
+  user_id: string
+  hari_tanggal: string  // ISO date "YYYY-MM-DD"
+  project: string
+  kegiatan: string[]    // array — multiple descriptions per event
+  dari_jam: string      // "HH:MM"
+  sampai_jam: string    // "HH:MM"
+  durasi: number        // manually editable
   standby: boolean
   akhir_pekan: boolean
   wfo: boolean
-  total_jam: number      // compensated hours
-  catatan?: string
-  folder_label?: string  // e.g. "Apr 2026" (for late subs)
-  submitted_at?: string
+  total_jam: number     // kompensasi result
+  created_at: string
 }
 
-export interface MonthlyReport {
-  label: string          // "Apr 2026"
-  entries: LemburEntry[]
-  total_durasi: number
-  total_kompensasi: number
+// Admin view: month with all submissions
+export interface AdminMonth {
+  bulan: string
+  deadline: Deadline | null
+  submissions: Array<LemburMonth & { profile: Profile; events: LemburEvent[] }>
 }
-
-export type EventCategory =
-  | 'CAMBER BMS'
-  | 'CAMBER KALTENG'
-  | 'BKC'
-  | 'ATM - RECON'
-  | 'RECON QNB'
-  | 'OTHER'
-
-export const EVENT_MAP: [EventCategory, string[]][] = [
-  ['CAMBER BMS',     ['camber bms', 'camber - bms', 'camber-bms', '[bms]']],
-  ['CAMBER KALTENG', ['camber kalteng', 'camber - kalteng', 'camber-kalteng', 'icms kalteng']],
-  ['BKC',            ['mb bkc', 'onion bkc', 'bkc']],
-  ['ATM - RECON',    ['atm - recon', 'atm recon']],
-  ['RECON QNB',      ['recon qnb']],
-]
-
-export const EVENT_ORDER: EventCategory[] = [
-  'CAMBER BMS', 'CAMBER KALTENG', 'BKC', 'ATM - RECON', 'RECON QNB', 'OTHER',
-]
-
-export const DEFAULT_EMPLOYEES: Employee[] = [
-  { nik: '170050', nama: 'Vania Sanjaya' },
-  { nik: '210070', nama: 'Luqmanul Hakim Aziz' },
-  { nik: '230011', nama: 'Aditya Ari Pratama' },
-  { nik: '200030', nama: 'Rizaldi Andriyana' },
-  { nik: '190082', nama: 'Zamzam Jamaludin Abdullah' },
-  { nik: '260018', nama: 'Zulvan Fadhillah' },
-  { nik: '200097', nama: 'Pega Kurnia' },
-]
 
 export const DEFAULT_PROJECTS = [
   'CAMBER BMS',
@@ -65,7 +53,7 @@ export const DEFAULT_PROJECTS = [
   'BKC',
   'ATM - RECON',
   'RECON QNB',
-]
+] as const
 
 export const DEFAULT_SUGGESTIONS = [
   'Standby Zoom',
@@ -77,7 +65,24 @@ export const DEFAULT_SUGGESTIONS = [
   'Konfirmasi semua berjalan sesuai timeline',
 ]
 
-export const MOM_LABELS = [
-  'Okt 2025', 'Nov 2025', 'Des 2025',
-  'Jan 2026', 'Feb 2026', 'Mar 2026', 'Apr 2026', 'Mei 2026',
-]
+/** "YYYY-MM" for the current month */
+export function currentBulan(): string {
+  const now = new Date()
+  const y = now.getFullYear()
+  const m = String(now.getMonth() + 1).padStart(2, '0')
+  return `${y}-${m}`
+}
+
+/** "Juni 2026" style label from "2026-06" */
+export function bulanLabel(bulan: string): string {
+  const [y, m] = bulan.split('-')
+  const date = new Date(Number(y), Number(m) - 1, 1)
+  return date.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })
+}
+
+/** short label e.g. "Jun 2026" */
+export function bulanShort(bulan: string): string {
+  const [y, m] = bulan.split('-')
+  const date = new Date(Number(y), Number(m) - 1, 1)
+  return date.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })
+}

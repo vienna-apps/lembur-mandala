@@ -1,6 +1,3 @@
-import type { LemburEntry, EventCategory, EVENT_MAP } from './types'
-import { EVENT_ORDER } from './types'
-
 export function calcDuration(dari: string, sampai: string): number {
   const [dh, dm] = dari.split(':').map(Number)
   const [sh, sm] = sampai.split(':').map(Number)
@@ -16,8 +13,8 @@ export function calcKompensasi(durasi: number, standby: boolean, akhirPekan: boo
   return durasi * mult
 }
 
-export function normalizeEvent(project: string, kegiatan: string): EventCategory {
-  const eventMap: [EventCategory, string[]][] = [
+export function normalizeEvent(project: string, kegiatan: string): string {
+  const eventMap: [string, string[]][] = [
     ['CAMBER BMS',     ['camber bms', 'camber - bms', 'camber-bms', '[bms]']],
     ['CAMBER KALTENG', ['camber kalteng', 'camber - kalteng', 'camber-kalteng', 'icms kalteng']],
     ['BKC',            ['mb bkc', 'onion bkc', 'bkc']],

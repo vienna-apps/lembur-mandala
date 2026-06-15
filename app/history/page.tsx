@@ -1,24 +1,35 @@
 'use client'
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import AdminDashboard from '@/components/AdminDashboard'
+import HistoryView from '@/components/HistoryView'
+import { Suspense } from 'react'
 
-export default function AdminPage() {
+function HistoryInner() {
   const { session, profile, loading } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const bulan = searchParams.get('bulan') ?? ''
 
   useEffect(() => {
     if (loading) return
     if (!session) router.replace('/login')
-    else if (profile && !profile.is_admin) router.replace('/dashboard')
+    else if (profile?.is_admin) router.replace('/admin')
   }, [loading, session, profile, router])
 
-  if (loading || !profile?.is_admin) return (
+  if (loading || !profile) return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ color: 'var(--gold)', fontFamily: 'Cormorant Garamond, serif', fontSize: 22 }}>✦ Memuat…</div>
     </div>
   )
 
-  return <AdminDashboard profile={profile} />
+  return <HistoryView profile={profile} initialBulan={bulan} />
+}
+
+export default function HistoryPage() {
+  return (
+    <Suspense>
+      <HistoryInner />
+    </Suspense>
+  )
 }
