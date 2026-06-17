@@ -13,20 +13,31 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    // Email template sends: ?token_hash=xxx&type=recovery
     const params = new URLSearchParams(window.location.search)
     const token_hash = params.get('token_hash')
     const type = params.get('type')
 
-    if (!token_hash || type !== 'recovery') {
-      setStage('error')
+    if (token_hash && type === 'recovery') {
+      // New email template: ?token_hash=xxx&type=recovery
+      getSupabaseClient().auth.verifyOtp({ token_hash, type: 'recovery' }).then(({ error }) => {
+        if (error) { setStage('error'); return }
+        setStage('form')
+      })
       return
     }
 
-    getSupabaseClient().auth.verifyOtp({ token_hash, type: 'recovery' }).then(({ error }) => {
-      if (error) { setStage('error'); return }
-      setStage('form')
-    })
+    // Fallback: Supabase implicit flow sends #access_token=xxx in the hash.
+    // The Supabase client auto-processes the hash on getSession().
+    const hash = window.location.hash
+    if (hash.includes('type=recovery') && hash.includes('access_token=')) {
+      getSupabaseClient().auth.getSession().then(({ data, error }) => {
+        if (error || !data.session) { setStage('error'); return }
+        setStage('form')
+      })
+      return
+    }
+
+    setStage('error')
   }, [])
 
   async function handleSubmit(e: React.FormEvent) {
