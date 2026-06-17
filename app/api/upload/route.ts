@@ -47,18 +47,33 @@ function parseTimeCell(val: unknown): string[] {
   return t ? [t] : []
 }
 
+const PROJECT_ALIASES: Record<string, string> = {
+  'MB BKC': 'BKC', 'ONION BKC': 'BKC', 'OINON BKC': 'BKC',
+  'CAMBER-BMS': 'CAMBER BMS', 'CAMBER - BMS': 'CAMBER BMS',
+  'CAMBER BUKOPIN': 'BKC', 'BUKOPIN': 'BKC',
+  'ATM RECON': 'ATM - RECON', 'ATM-RECON': 'ATM - RECON',
+  'RECON QNB': 'RECON QNB', 'QNB': 'RECON QNB',
+  'ICMS KALTENG': 'CAMBER KALTENG', 'CAMBER-KALTENG': 'CAMBER KALTENG',
+}
+
 function detectProject(kegiatan: string): { project: string; desc: string } {
+  // 1. Try bracket prefix: "[RECON QNB] description..."
   const m = kegiatan.match(/^\[([^\]]+)\]\s*(.*)/)
   if (m) {
     const raw = m[1].trim().toUpperCase()
-    const alias: Record<string, string> = {
-      'MB BKC': 'BKC', 'ONION BKC': 'BKC',
-      'CAMBER-BMS': 'CAMBER BMS', 'CAMBER - BMS': 'CAMBER BMS',
-      'ATM RECON': 'ATM - RECON',
-    }
-    const project = alias[raw] ?? (DEFAULT_PROJECTS.find(p => p === raw) ? raw : raw)
+    const project = PROJECT_ALIASES[raw] ?? (DEFAULT_PROJECTS.find(p => p === raw) ? raw : raw)
     return { project, desc: m[2].trim() }
   }
+
+  // 2. Fuzzy match: scan kegiatan text for any known project name or alias
+  const upper = kegiatan.toUpperCase()
+  for (const [alias, canonical] of Object.entries(PROJECT_ALIASES)) {
+    if (upper.includes(alias)) return { project: canonical, desc: kegiatan.trim() }
+  }
+  for (const p of DEFAULT_PROJECTS) {
+    if (upper.includes(p)) return { project: p, desc: kegiatan.trim() }
+  }
+
   return { project: '', desc: kegiatan.trim() }
 }
 
