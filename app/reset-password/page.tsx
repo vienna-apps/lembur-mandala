@@ -13,17 +13,17 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    // Supabase PKCE: exchange the `?code=` query param for a session.
-    // The reset email redirects here with ?code=xxx&type=recovery.
+    // Email template sends: ?token_hash=xxx&type=recovery
     const params = new URLSearchParams(window.location.search)
-    const code = params.get('code')
+    const token_hash = params.get('token_hash')
+    const type = params.get('type')
 
-    if (!code) {
+    if (!token_hash || type !== 'recovery') {
       setStage('error')
       return
     }
 
-    getSupabaseClient().auth.exchangeCodeForSession(code).then(({ error }) => {
+    getSupabaseClient().auth.verifyOtp({ token_hash, type: 'recovery' }).then(({ error }) => {
       if (error) { setStage('error'); return }
       setStage('form')
     })
