@@ -68,22 +68,51 @@ function parseBoolean(val: unknown): boolean {
   return false
 }
 
-// Detect column indices by header name — works regardless of column ordering.
+// Detect column indices by header name — works regardless of column ordering or language.
 function buildColMap(header: string[]): Record<string, number> {
   const map: Record<string, number> = {}
   header.forEach((h, i) => {
-    const lh = h.toLowerCase().trim()
-    if (lh.includes('nik') || lh.includes('nomor induk')) map.nik = i
-    else if (lh.includes('nama')) map.nama = i
-    else if (lh.includes('kegiatan')) map.kegiatan = i
-    else if (lh.includes('tanggal')) map.tanggal = i
-    else if (lh.startsWith('dari')) map.dari = i
-    else if (lh.startsWith('sampai')) map.sampai = i
-    else if (lh.includes('selama') || (lh.includes('durasi') && !lh.includes('total'))) map.durasi = i
-    else if (lh === 'wfo') map.wfo = i
-    else if (lh.includes('standby')) map.standby = i
-    else if (lh.includes('akhir') || lh.includes('merah')) map.weekend = i
-    else if (lh.includes('total')) map.total = i
+    // Normalise: lowercase, collapse whitespace
+    const lh = h.toLowerCase().replace(/\s+/g, ' ').trim()
+
+    if (lh.includes('nik') || lh.includes('nomor induk')) {
+      map.nik = i
+    } else if (lh.includes('nama') || lh.includes('name')) {
+      map.nama = i
+    } else if (lh.includes('kegiatan') || lh.includes('activity') || lh.includes('description') || lh.includes('keterangan')) {
+      map.kegiatan = i
+    } else if (
+      // "Tanggal" / "Date" / "Hari" — but NOT "tanggal dari/akhir/sampai" (those are time columns)
+      (lh.includes('tanggal') || lh.includes('date') || lh.includes('hari')) &&
+      !lh.includes('dari') && !lh.includes('from') &&
+      !lh.includes('akhir') && !lh.includes('end') && !lh.includes('sampai') && !lh.includes('to')
+    ) {
+      map.tanggal = i
+    } else if (
+      lh.startsWith('dari') || lh === 'from' ||
+      lh.includes('tanggal dari') || lh.includes('date from') || lh.includes('tgl dari') ||
+      lh.includes('waktu dari') || lh.includes('mulai') || lh.includes('start')
+    ) {
+      map.dari = i
+    } else if (
+      lh.startsWith('sampai') || lh === 'to' || lh === 'until' ||
+      lh.includes('tanggal akhir') || lh.includes('tanggal sampai') ||
+      lh.includes('date end') || lh.includes('date to') ||
+      lh.includes('tgl akhir') || lh.includes('tgl sampai') ||
+      lh.includes('waktu sampai') || lh.includes('selesai') || lh.includes('end')
+    ) {
+      map.sampai = i
+    } else if (lh.includes('selama') || (lh.includes('durasi') && !lh.includes('total'))) {
+      map.durasi = i
+    } else if (lh === 'wfo') {
+      map.wfo = i
+    } else if (lh.includes('stand by') || lh.includes('standby')) {
+      map.standby = i
+    } else if (lh.includes('akhir pekan') || lh.includes('merah') || lh.includes('weekend') || lh.includes('holiday')) {
+      map.weekend = i
+    } else if (lh.includes('total')) {
+      map.total = i
+    }
   })
   return map
 }
