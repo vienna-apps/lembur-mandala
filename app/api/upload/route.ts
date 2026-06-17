@@ -8,14 +8,13 @@ function token(req: NextRequest) {
   return req.headers.get('authorization')?.replace('Bearer ', '') ?? ''
 }
 
-// Indonesian month names → month number (0-based)
+// Indonesian month names → month number
 const ID_MONTHS: Record<string, number> = {
   januari:1, februari:2, maret:3, april:4, mei:5, juni:6,
   juli:7, agustus:8, september:9, oktober:10, november:11, desember:12,
 }
 
 function parseIdDate(raw: string): string | null {
-  // "Kamis, 05 Maret 2026" → "2026-03-05"
   const match = raw.match(/\d+\s+(\w+)\s+(\d{4})/)
   if (!match) return null
   const day   = raw.match(/(\d+)\s+\w+\s+\d{4}/)?.[1]
@@ -27,7 +26,6 @@ function parseIdDate(raw: string): string | null {
 
 function excelTimeToHHMM(val: unknown): string | null {
   if (typeof val === 'string') {
-    // Already "HH:MM" or similar
     if (/^\d{1,2}:\d{2}$/.test(val.trim())) return val.trim()
     return null
   }
@@ -38,12 +36,21 @@ function excelTimeToHHMM(val: unknown): string | null {
   return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`
 }
 
+// Parse a cell that may contain multiple time values separated by newlines.
+// Returns array of "HH:MM" strings.
+function parseTimeCell(val: unknown): string[] {
+  if (typeof val === 'string') {
+    const lines = val.split(/\r?\n/).map(s => s.trim()).filter(Boolean)
+    return lines.map(l => excelTimeToHHMM(l)).filter((t): t is string => t !== null)
+  }
+  const t = excelTimeToHHMM(val)
+  return t ? [t] : []
+}
+
 function detectProject(kegiatan: string): { project: string; desc: string } {
-  // "[CAMBER BMS] Assist deploy..." → project=CAMBER BMS, desc=Assist deploy...
   const m = kegiatan.match(/^\[([^\]]+)\]\s*(.*)/)
   if (m) {
     const raw = m[1].trim().toUpperCase()
-    // Map known aliases
     const alias: Record<string, string> = {
       'MB BKC': 'BKC', 'ONION BKC': 'BKC',
       'CAMBER-BMS': 'CAMBER BMS', 'CAMBER - BMS': 'CAMBER BMS',
@@ -59,6 +66,26 @@ function parseBoolean(val: unknown): boolean {
   if (typeof val === 'string') return val.trim().toLowerCase() === 'ya'
   if (typeof val === 'number') return val === 1
   return false
+}
+
+// Detect column indices by header name — works regardless of column ordering.
+function buildColMap(header: string[]): Record<string, number> {
+  const map: Record<string, number> = {}
+  header.forEach((h, i) => {
+    const lh = h.toLowerCase().trim()
+    if (lh.includes('nik') || lh.includes('nomor induk')) map.nik = i
+    else if (lh.includes('nama')) map.nama = i
+    else if (lh.includes('kegiatan')) map.kegiatan = i
+    else if (lh.includes('tanggal')) map.tanggal = i
+    else if (lh.startsWith('dari')) map.dari = i
+    else if (lh.startsWith('sampai')) map.sampai = i
+    else if (lh.includes('selama') || (lh.includes('durasi') && !lh.includes('total'))) map.durasi = i
+    else if (lh === 'wfo') map.wfo = i
+    else if (lh.includes('standby')) map.standby = i
+    else if (lh.includes('akhir') || lh.includes('merah')) map.weekend = i
+    else if (lh.includes('total')) map.total = i
+  })
+  return map
 }
 
 // POST /api/upload — parse xlsx, return preview or commit
@@ -83,21 +110,29 @@ export async function POST(req: NextRequest) {
 
   const header = (rows[0] as string[]).map(h => String(h).toLowerCase().trim())
 
-  // Detect format: new (NIK first) vs old (Nama first)
-  const isNewFormat = header[0].includes('nomor') || header[0] === 'nik'
-  const isOldFormat = header[0] === 'nama'
-
-  if (!isNewFormat && !isOldFormat) {
+  // Must have NIK or Nama as first column
+  const firstCol = header[0]
+  if (!firstCol.includes('nik') && !firstCol.includes('nomor') && firstCol !== 'nama') {
     return NextResponse.json({
       error: 'Format file tidak dikenal. Pastikan menggunakan template lembur yang benar.',
-      expectedHeader: 'Kolom pertama harus "Nomor Induk Karyawan" atau "Nama".',
+      expectedHeader: 'Kolom pertama harus "NIK", "Nomor Induk Karyawan", atau "Nama".',
     }, { status: 422 })
   }
 
-  // Column indices
-  const COL = isNewFormat
-    ? { nik:0, nama:1, kegiatan:2, tanggal:3, standby:4, dari:5, sampai:6, durasi:7, weekend:8, total:9, wfo:10 }
-    : { nik:1, nama:0, kegiatan:2, tanggal:3, standby:-1, dari:4, sampai:5, durasi:6, weekend:7, total:-1, wfo:-1 }
+  // Build column map from headers — flexible, order-independent
+  const COL = buildColMap(header)
+
+  // Fallback for old format (Nama first, fixed positions)
+  if (firstCol === 'nama' && COL.nik === undefined) {
+    COL.nik = 1; COL.nama = 0; COL.kegiatan = 2; COL.tanggal = 3
+    COL.dari = 4; COL.sampai = 5; COL.durasi = 6; COL.weekend = 7
+  }
+
+  if (COL.dari === undefined || COL.sampai === undefined) {
+    return NextResponse.json({
+      error: 'Kolom "Dari" dan "Sampai" tidak ditemukan di file.',
+    }, { status: 422 })
+  }
 
   const errors: { row: number; field: string; message: string }[] = []
   const parsed: {
@@ -119,81 +154,83 @@ export async function POST(req: NextRequest) {
 
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i] as unknown[]
-    // Skip blank rows
     if (row.every(c => c === '' || c === null || c === undefined)) continue
 
-    // NIK/Nama (only on first data row)
-    if (i === 1) {
-      parsedNik  = String(row[COL.nik] ?? '').trim()
-      parsedNama = String(row[COL.nama] ?? '').trim()
-    }
+    if (!parsedNik && COL.nik !== undefined) parsedNik  = String(row[COL.nik]  ?? '').trim()
+    if (!parsedNama && COL.nama !== undefined) parsedNama = String(row[COL.nama] ?? '').trim()
 
     const kegiatanRaw = String(row[COL.kegiatan] ?? '').trim()
     const tanggalRaw  = String(row[COL.tanggal]  ?? '').trim()
 
-    if (!kegiatanRaw) continue // skip blank kegiatan rows silently
+    if (!kegiatanRaw) continue
 
-    // Validate & parse date
     const hari_tanggal = parseIdDate(tanggalRaw)
     if (!hari_tanggal) {
       errors.push({ row: i + 1, field: 'Hari, Tanggal', message: `"${tanggalRaw}" tidak bisa diparsing. Format: "Senin, 01 Juni 2026"` })
       continue
     }
 
-    // Validate times
-    const dari_jam   = excelTimeToHHMM(row[COL.dari])
-    const sampai_jam = excelTimeToHHMM(row[COL.sampai])
-    if (!dari_jam)   { errors.push({ row: i+1, field: 'Dari Jam',   message: `Nilai tidak valid: "${row[COL.dari]}"` }); continue }
-    if (!sampai_jam) { errors.push({ row: i+1, field: 'Sampai Jam', message: `Nilai tidak valid: "${row[COL.sampai]}"` }); continue }
-
-    // Project & description
     const { project, desc } = detectProject(kegiatanRaw)
     if (!project) {
       errors.push({ row: i+1, field: 'Kegiatan/Project', message: `Tidak bisa mendeteksi project dari: "${kegiatanRaw}". Tambahkan prefix [NAMA PROJECT].` })
-      // Don't skip — still include but with empty project, user can fix
     }
 
-    const standby    = COL.standby >= 0 ? parseBoolean(row[COL.standby]) : false
-    const akhir_pekan = parseBoolean(row[COL.weekend])
-    const wfo        = COL.wfo >= 0 ? parseBoolean(row[COL.wfo]) : false
+    const standby    = COL.standby  !== undefined ? parseBoolean(row[COL.standby])  : false
+    const akhir_pekan = COL.weekend !== undefined ? parseBoolean(row[COL.weekend])  : false
+    const wfo        = COL.wfo      !== undefined ? parseBoolean(row[COL.wfo])       : false
 
-    // Duration: use parsed value from file if valid, else recalculate
-    const durasiRaw   = String(row[COL.durasi] ?? '').replace(',', '.').trim()
-    const durasiParsed = parseFloat(durasiRaw)
-    const durasi = !isNaN(durasiParsed) && durasiParsed > 0
-      ? durasiParsed
-      : calcDuration(dari_jam, sampai_jam)
+    // Parse time cells — may contain multiple values separated by newlines
+    const dariTimes   = parseTimeCell(row[COL.dari])
+    const sampaiTimes = parseTimeCell(row[COL.sampai])
 
-    const total_jam = calcKompensasi(durasi, standby, akhir_pekan)
+    if (dariTimes.length === 0) {
+      errors.push({ row: i+1, field: 'Dari Jam', message: `Nilai tidak valid: "${row[COL.dari]}"` })
+      continue
+    }
+    if (sampaiTimes.length === 0) {
+      errors.push({ row: i+1, field: 'Sampai Jam', message: `Nilai tidak valid: "${row[COL.sampai]}"` })
+      continue
+    }
+    if (dariTimes.length !== sampaiTimes.length) {
+      errors.push({ row: i+1, field: 'Dari/Sampai Jam', message: `Jumlah waktu "Dari" (${dariTimes.length}) dan "Sampai" (${sampaiTimes.length}) tidak sama.` })
+      continue
+    }
 
-    parsed.push({
-      hari_tanggal,
-      project: project || 'UNKNOWN',
-      kegiatan: [desc || kegiatanRaw],
-      dari_jam,
-      sampai_jam,
-      durasi,
-      standby,
-      akhir_pekan,
-      wfo,
-      total_jam,
-      raw_row: i + 1,
-    })
+    // One Excel row may expand to multiple entries (one per time range)
+    for (let t = 0; t < dariTimes.length; t++) {
+      const dari_jam   = dariTimes[t]
+      const sampai_jam = sampaiTimes[t]
+
+      // For multi-range rows, durasi per slot is recalculated (can't split the cell value)
+      const durasi = calcDuration(dari_jam, sampai_jam)
+      const total_jam = calcKompensasi(durasi, standby, akhir_pekan)
+
+      parsed.push({
+        hari_tanggal,
+        project: project || 'UNKNOWN',
+        kegiatan: [desc || kegiatanRaw],
+        dari_jam,
+        sampai_jam,
+        durasi,
+        standby,
+        akhir_pekan,
+        wfo,
+        total_jam,
+        raw_row: i + 1,
+      })
+    }
   }
 
-  // If just previewing, return parsed data + errors
   if (!commit) {
     return NextResponse.json({ parsed, errors, parsedNik, parsedNama, totalRows: parsed.length })
   }
 
-  // Commit: insert all valid rows
   if (errors.length > 0) {
     return NextResponse.json({ error: 'Selesaikan error sebelum menyimpan.', errors }, { status: 422 })
   }
 
   const db = getAdminClient()
 
-  // Ensure month exists
   await db.from('lembur_months').upsert(
     { user_id: user.id, bulan },
     { onConflict: 'user_id,bulan', ignoreDuplicates: true }
@@ -204,8 +241,8 @@ export async function POST(req: NextRequest) {
   if (!month) return NextResponse.json({ error: 'Gagal membuat record bulan.' }, { status: 500 })
 
   const inserts = parsed.map(p => ({
-    month_id: month.id,
-    user_id:  user.id,
+    month_id:     month.id,
+    user_id:      user.id,
     hari_tanggal: p.hari_tanggal,
     project:      p.project,
     kegiatan:     p.kegiatan,

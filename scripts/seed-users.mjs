@@ -63,6 +63,7 @@ const TEAM = [
   { nama: 'Windra Halim',               nik: '240044', first: 'windra',     is_admin: false },
   { nama: 'Zamzam Jamaludin Abdullah',  nik: '190082', first: 'zamzam',     is_admin: false },
   { nama: 'Zulvan Fadhillah',           nik: '260018', first: 'zulvan',     is_admin: false },
+  { nama: 'Meryana Putri Ramandhani',   nik: '200022', first: 'meryana',    is_admin: false },
 ]
 
 // ── Main ─────────────────────────────────────────────────────────────────────
