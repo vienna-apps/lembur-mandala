@@ -115,10 +115,15 @@ export default function UploadPanel({ profile, bulan, onClose, onSaved }: Props)
 
               {globalErr && <div style={{ padding:'10px 14px', borderRadius:8, background:'rgba(196,122,114,.1)', border:'1px solid rgba(196,122,114,.35)', fontSize:13, color:'var(--rose)', marginBottom:12 }}>{globalErr}</div>}
 
-              <div style={{ fontSize:13, color:'var(--muted)', marginBottom:20, lineHeight:1.6 }}>
+              <div style={{ fontSize:13, color:'var(--muted)', marginBottom:16, lineHeight:1.6 }}>
                 <strong style={{ color:'var(--brown)' }}>Format yang diterima:</strong> template standar lembur tim Mandala (.xlsx).<br />
-                Kolom: <code style={{ background:'#f0e0d0', padding:'1px 5px', borderRadius:4 }}>NIK · Nama · Kegiatan · Hari, Tanggal · Standby · Dari Jam · Sampai Jam · Selama · Akhir Pekan · Total Jam · WFO</code>
+                Kolom: <code style={{ background:'#f0e0d0', padding:'1px 5px', borderRadius:4 }}>NIK · Nama · Kegiatan · Hari, Tanggal · Dari Jam · Sampai Jam · Selama · WFO · Standby · Akhir Pekan · Total Jam</code>
               </div>
+
+              <a href="/api/template" download
+                style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, width:'100%', padding:'11px', borderRadius:'var(--r2)', border:'1.5px solid rgba(200,153,78,.5)', background:'rgba(200,153,78,.07)', color:'var(--gold)', fontSize:13, fontWeight:600, textDecoration:'none', marginBottom:12, cursor:'pointer' }}>
+                ⬇ Download Template .xlsx
+              </a>
 
               <button onClick={handleParse} disabled={!file} className="btn-primary" style={{ width:'100%', opacity: file ? 1 : .5 }}>
                 Periksa File →
