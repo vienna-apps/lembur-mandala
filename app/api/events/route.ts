@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
 
   if (!month) return NextResponse.json({ error: 'Could not find/create month' }, { status: 500 })
 
-  const total_jam = calcKompensasi(Number(durasi), Boolean(standby), Boolean(akhir_pekan))
+  const total_jam = calcKompensasi(Number(durasi), Boolean(standby), Boolean(akhir_pekan), Boolean(wfo))
 
   const { data, error } = await db
     .from('lembur_events')

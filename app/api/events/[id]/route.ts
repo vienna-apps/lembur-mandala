@@ -15,7 +15,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const body = await req.json()
   const { hari_tanggal, project, kegiatan, dari_jam, sampai_jam, durasi, standby, akhir_pekan, wfo } = body
 
-  const total_jam = calcKompensasi(Number(durasi), Boolean(standby), Boolean(akhir_pekan))
+  const total_jam = calcKompensasi(Number(durasi), Boolean(standby), Boolean(akhir_pekan), Boolean(wfo))
 
   const db = getAdminClient()
   const { data, error } = await db

@@ -39,8 +39,8 @@ export default function AddEventPanel({ profile, bulan, editingEvent, onClose, o
   const [error,      setError]      = useState('')
   const [suggestions, setSuggestions] = useState<string[]>(DEFAULT_SUGGESTIONS)
 
-  const komp = calcKompensasi(durasi, standby, akhirPekan)
-  const mult = (akhirPekan ? 2 : 1) * (standby ? 0.5 : 1)
+  const komp = calcKompensasi(durasi, standby, akhirPekan, wfo)
+  const mult = (akhirPekan ? 2 : 1) * ((standby && !wfo) ? 0.5 : 1)
 
   // Auto-detect weekend from date
   useEffect(() => {

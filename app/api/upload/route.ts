@@ -247,7 +247,7 @@ export async function POST(req: NextRequest) {
 
       // For multi-range rows, durasi per slot is recalculated (can't split the cell value)
       const durasi = calcDuration(dari_jam, sampai_jam)
-      const total_jam = calcKompensasi(durasi, standby, akhir_pekan)
+      const total_jam = calcKompensasi(durasi, standby, akhir_pekan, wfo)
 
       parsed.push({
         hari_tanggal,

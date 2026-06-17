@@ -7,9 +7,10 @@ export function calcDuration(dari: string, sampai: string): number {
   return (end - start) / 60
 }
 
-export function calcKompensasi(durasi: number, standby: boolean, akhirPekan: boolean): number {
-  // Both flags apply independently: akhir pekan ×2, standby ×0.5 → combined = ×1
-  const mult = (akhirPekan ? 2 : 1) * (standby ? 0.5 : 1)
+export function calcKompensasi(durasi: number, standby: boolean, akhirPekan: boolean, wfo = false): number {
+  // Standby ×0.5 only applies when NOT WFO. If standby + WFO, full hours are counted.
+  const standbyMult = (standby && !wfo) ? 0.5 : 1
+  const mult = (akhirPekan ? 2 : 1) * standbyMult
   return durasi * mult
 }
 

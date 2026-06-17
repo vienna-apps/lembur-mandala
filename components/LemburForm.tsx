@@ -136,7 +136,7 @@ export default function LemburForm() {
     try {
       const label = isLate ? folderLabel : getCurrentMonthLabel()
       for (const act of activities) {
-        const total_jam = calcKompensasi(act.durasi, act.standby, act.akhir_pekan)
+        const total_jam = calcKompensasi(act.durasi, act.standby, act.akhir_pekan, act.wfo)
         const res = await fetch('/api/entries', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -187,7 +187,7 @@ export default function LemburForm() {
   }
 
   const totalDurasi = activities.reduce((s, a) => s + a.durasi, 0)
-  const totalKomp   = activities.reduce((s, a) => s + calcKompensasi(a.durasi, a.standby, a.akhir_pekan), 0)
+  const totalKomp   = activities.reduce((s, a) => s + calcKompensasi(a.durasi, a.standby, a.akhir_pekan, a.wfo), 0)
 
   // ── Success screen ──
   if (submitted) {
@@ -421,7 +421,7 @@ function ActivityRowCard({
   onCopy: () => void
   canRemove: boolean
 }) {
-  const kompensasi = calcKompensasi(activity.durasi, activity.standby, activity.akhir_pekan)
+  const kompensasi = calcKompensasi(activity.durasi, activity.standby, activity.akhir_pekan, activity.wfo)
   const [showDrop, setShowDrop] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
