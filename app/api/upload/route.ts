@@ -75,7 +75,7 @@ function buildColMap(header: string[]): Record<string, number> {
     // Normalise: lowercase, collapse whitespace
     const lh = h.toLowerCase().replace(/\s+/g, ' ').trim()
 
-    if (lh.includes('nik') || lh.includes('nomor induk')) {
+    if (lh.includes('nik') || lh.includes('nomor induk') || lh.includes('no induk') || lh.includes('induk karyawan')) {
       map.nik = i
     } else if (lh.includes('nama') || lh.includes('name')) {
       map.nama = i
@@ -104,7 +104,7 @@ function buildColMap(header: string[]): Record<string, number> {
       map.sampai = i
     } else if (lh.includes('selama') || (lh.includes('durasi') && !lh.includes('total'))) {
       map.durasi = i
-    } else if (lh === 'wfo') {
+    } else if (lh === 'wfo' || lh === 'wfh') {
       map.wfo = i
     } else if (lh.includes('stand by') || lh.includes('standby')) {
       map.standby = i
