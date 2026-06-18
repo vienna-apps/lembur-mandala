@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { bulan, hari_tanggal, project, kegiatan, dari_jam, sampai_jam, durasi, standby, akhir_pekan, wfo, bukti_url } = body
+  const { bulan, hari_tanggal, project, kegiatan, dari_jam, sampai_jam, durasi, standby, akhir_pekan, wfo, bukti_urls } = body
 
   if (!bulan || !hari_tanggal || !project || !dari_jam || !sampai_jam) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       akhir_pekan: Boolean(akhir_pekan),
       wfo: Boolean(wfo),
       total_jam,
-      ...(bukti_url !== undefined ? { bukti_url: bukti_url ?? null } : {}),
+      ...(bukti_urls !== undefined ? { bukti_urls: bukti_urls ?? null } : {}),
     })
     .select()
     .single()

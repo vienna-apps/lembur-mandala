@@ -267,7 +267,7 @@ export default function EmployeeDashboard({ profile }: Props) {
                 {events.length === 0 && <div style={{ padding:32, textAlign:'center', color:'var(--muted)', fontSize:13 }}>Belum ada events.</div>}
                 {events.map(ev => {
                   const open = expandedEv === ev.id
-                  const isImg = ev.bukti_url && !ev.bukti_url.includes('.pdf')
+                  const hasProof = ev.bukti_urls && ev.bukti_urls.length > 0
                   return (
                     <div key={ev.id} style={{ border:'1px solid var(--border)', borderRadius:'var(--r2)', overflow:'hidden' }}>
                       <div onClick={() => setExpandedEv(open ? null : ev.id)}
@@ -283,7 +283,7 @@ export default function EmployeeDashboard({ profile }: Props) {
                           <div style={{ fontSize:11, color:'var(--muted)', marginTop:3 }}>{ev.dari_jam}–{ev.sampai_jam} · {ev.wfo ? 'WFO' : 'WFH'}{ev.standby ? ' · Standby' : ''}{ev.akhir_pekan ? ' · Akhir Pekan' : ''}</div>
                         </div>
                         <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                          {ev.bukti_url && <span style={{ fontSize:10, color:'var(--gold)', background:'rgba(200,153,78,.1)', padding:'2px 7px', borderRadius:8, border:'1px solid rgba(200,153,78,.2)' }}>📎 bukti</span>}
+                          {hasProof && <span style={{ fontSize:10, color:'var(--gold)', background:'rgba(200,153,78,.1)', padding:'2px 7px', borderRadius:8, border:'1px solid rgba(200,153,78,.2)' }}>📎 {ev.bukti_urls!.length}</span>}
                           <div style={{ fontFamily:'Cormorant Garamond,serif', fontSize:18, fontWeight:600, color:'var(--gold)' }}>{ev.total_jam.toFixed(1)}j</div>
                         </div>
                         <div style={{ color:'var(--muted)', fontSize:12 }}>{open ? '▲' : '▼'}</div>
@@ -295,19 +295,16 @@ export default function EmployeeDashboard({ profile }: Props) {
                               <div key={l}><div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:.8, color:'var(--muted)', marginBottom:2 }}>{l}</div><div style={{ color:'var(--cream)' }}>{v}</div></div>
                             ))}
                           </div>
-                          {ev.bukti_url ? (
+                          {hasProof ? (
                             <div style={{ borderTop:'1px solid var(--border2)', paddingTop:10 }}>
-                              <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:.8, color:'var(--gold)', marginBottom:8 }}>Bukti Kegiatan</div>
-                              {isImg ? (
-                                <a href={ev.bukti_url} target="_blank" rel="noreferrer">
-                                  <img src={ev.bukti_url} alt="Bukti" style={{ maxWidth:'100%', maxHeight:240, borderRadius:8, border:'1px solid var(--border)', objectFit:'cover', display:'block' }} />
-                                </a>
-                              ) : (
-                                <a href={ev.bukti_url} target="_blank" rel="noreferrer"
-                                  style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:8, border:'1px solid var(--border)', background:'var(--bg3)', color:'var(--cream)', fontSize:12, textDecoration:'none' }}>
-                                  📄 Lihat Bukti →
-                                </a>
-                              )}
+                              <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:.8, color:'var(--gold)', marginBottom:8 }}>Bukti Kegiatan ({ev.bukti_urls!.length})</div>
+                              <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                                {ev.bukti_urls!.map((url, i) => (
+                                  url.match(/\.(heic|heif)$/i)
+                                    ? <div key={i} style={{ width:80, height:80, borderRadius:8, border:'1px solid var(--border)', background:'var(--bg3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:'var(--muted)', fontFamily:'monospace' }}>HEIC</div>
+                                    : <a key={i} href={url} target="_blank" rel="noreferrer"><img src={url} alt={`Bukti ${i+1}`} style={{ width:80, height:80, borderRadius:8, border:'1px solid var(--border)', objectFit:'cover', display:'block' }} /></a>
+                                ))}
+                              </div>
                             </div>
                           ) : (
                             <div style={{ borderTop:'1px solid var(--border2)', paddingTop:10, fontSize:12, color:'var(--muted)' }}>Belum ada bukti kegiatan.</div>

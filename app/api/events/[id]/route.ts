@@ -13,14 +13,14 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const { id } = await params
   const body = await req.json()
-  const { hari_tanggal, project, kegiatan, dari_jam, sampai_jam, durasi, standby, akhir_pekan, wfo, bukti_url } = body
+  const { hari_tanggal, project, kegiatan, dari_jam, sampai_jam, durasi, standby, akhir_pekan, wfo, bukti_urls } = body
 
   const total_jam = calcKompensasi(Number(durasi), Boolean(standby), Boolean(akhir_pekan), Boolean(wfo))
 
   const db = getAdminClient()
   const { data, error } = await db
     .from('lembur_events')
-    .update({ hari_tanggal, project, kegiatan, dari_jam, sampai_jam, durasi: Number(durasi), standby, akhir_pekan, wfo, total_jam, ...(bukti_url !== undefined ? { bukti_url: bukti_url ?? null } : {}) })
+    .update({ hari_tanggal, project, kegiatan, dari_jam, sampai_jam, durasi: Number(durasi), standby, akhir_pekan, wfo, total_jam, ...(bukti_urls !== undefined ? { bukti_urls: bukti_urls ?? null } : {}) })
     .eq('id', id)
     .eq('user_id', user.id)
     .select()

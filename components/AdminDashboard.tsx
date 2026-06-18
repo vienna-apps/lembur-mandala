@@ -390,6 +390,18 @@ export default function AdminDashboard({ profile }: Props) {
                               ))}
                             </div>
                           </div>
+                          {ev.bukti_urls && ev.bukti_urls.length > 0 && (
+                            <div style={{ gridColumn:'1/-1', marginTop:4, paddingTop:10, borderTop:'1px solid var(--border2)' }}>
+                              <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:1, color:'var(--gold)', marginBottom:8 }}>Bukti Kegiatan ({ev.bukti_urls.length})</div>
+                              <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                                {ev.bukti_urls.map((url, i) => (
+                                  url.match(/\.(heic|heif)$/i)
+                                    ? <div key={i} style={{ width:80, height:80, borderRadius:8, border:'1px solid var(--border)', background:'var(--bg3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:'var(--muted)', fontFamily:'monospace' }}>HEIC</div>
+                                    : <a key={i} href={url} target="_blank" rel="noreferrer"><img src={url} alt={`Bukti ${i+1}`} style={{ width:80, height:80, borderRadius:8, border:'1px solid var(--border)', objectFit:'cover', display:'block' }} /></a>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

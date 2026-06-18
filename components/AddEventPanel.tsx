@@ -42,8 +42,9 @@ export default function AddEventPanel({ profile, bulan, editingEvent, prefill, o
   const [saving,     setSaving]     = useState(false)
   const [error,      setError]      = useState('')
   const [suggestions, setSuggestions] = useState<string[]>(DEFAULT_SUGGESTIONS)
-  const [proofFile,  setProofFile]  = useState<File | null>(null)
-  const [proofPreview, setProofPreview] = useState<string>(ev?.bukti_url ?? '')
+  const [proofFiles,    setProofFiles]    = useState<File[]>([])
+  const [proofPreviews, setProofPreviews] = useState<string[]>(ev?.bukti_urls ?? [])
+  const [existingUrls,  setExistingUrls]  = useState<string[]>(ev?.bukti_urls ?? [])
   const proofInputRef = useRef<HTMLInputElement>(null)
 
   const komp = calcKompensasi(durasi, standby, akhirPekan, wfo)
@@ -82,11 +83,11 @@ export default function AddEventPanel({ profile, bulan, editingEvent, prefill, o
     }
     setSaving(true); setError('')
     try {
-      let bukti_url: string | null | undefined = ev?.bukti_url ?? undefined
-      if (proofFile) {
-        const userId = session?.user?.id ?? profile.id
-        bukti_url = await uploadProof(proofFile, userId)
-      }
+      const userId = session?.user?.id ?? profile.id
+      const newUrls = proofFiles.length > 0
+        ? await Promise.all(proofFiles.map(f => uploadProof(f, userId)))
+        : []
+      const bukti_urls = [...existingUrls, ...newUrls]
       const payload = {
         bulan,
         hari_tanggal: date,
@@ -99,7 +100,7 @@ export default function AddEventPanel({ profile, bulan, editingEvent, prefill, o
         akhir_pekan: akhirPekan,
         wfo,
         total_jam: komp,
-        ...(bukti_url !== undefined ? { bukti_url } : {}),
+        bukti_urls: bukti_urls.length > 0 ? bukti_urls : null,
       }
       if (ev) await updateEvent(ev.id, payload)
       else     await createEvent(payload)
@@ -275,46 +276,76 @@ export default function AddEventPanel({ profile, bulan, editingEvent, prefill, o
           </div>
 
           {/* Proof upload */}
-          <div style={{ marginBottom:22 }}>
-            <label className="field-label">Bukti Kegiatan <span className="field-hint">— foto, screenshot, atau PDF (opsional)</span></label>
-            <input
-              ref={proofInputRef}
-              type="file"
-              accept="image/*,.pdf"
-              style={{ display:'none' }}
-              onChange={e => {
-                const file = e.target.files?.[0] ?? null
-                if (file && file.size > 25 * 1024 * 1024) {
-                  alert('Ukuran file maksimal 25 MB.')
-                  e.target.value = ''
-                  return
-                }
-                setProofFile(file)
-                if (file) setProofPreview(URL.createObjectURL(file))
-              }}
-            />
-            {proofPreview ? (
-              <div style={{ marginBottom:10 }}>
-                {proofPreview.endsWith('.pdf') || (proofFile?.type === 'application/pdf') ? (
-                  <a href={proofPreview} target="_blank" rel="noreferrer"
-                    style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:8, border:'1px solid #ddd0c4', background:'#f5ede3', fontSize:12, color:'var(--brown)', textDecoration:'none' }}>
-                    📄 Lihat PDF Bukti
-                  </a>
-                ) : (
-                  <img src={proofPreview} alt="Preview bukti"
-                    style={{ maxWidth:'100%', maxHeight:200, borderRadius:8, border:'1px solid #ddd0c4', objectFit:'cover', display:'block', marginBottom:6 }} />
+          {(() => {
+            const total = existingUrls.length + proofFiles.length
+            const canAdd = total < 5
+            return (
+              <div style={{ marginBottom:22 }}>
+                <label className="field-label">
+                  Bukti Kegiatan
+                  <span className="field-hint"> — maks 5 foto · JPG/JPEG/PNG/HEIC · maks 25 MB/foto</span>
+                </label>
+                <input
+                  ref={proofInputRef}
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/heic,image/heif,.heic,.heif"
+                  multiple
+                  style={{ display:'none' }}
+                  onChange={e => {
+                    const files = Array.from(e.target.files ?? [])
+                    const allowed = ['image/jpeg','image/jpg','image/png','image/heic','image/heif']
+                    const invalid = files.filter(f => !allowed.includes(f.type.toLowerCase()) && !f.name.toLowerCase().match(/\.(heic|heif|jpg|jpeg|png)$/))
+                    if (invalid.length) { alert('Hanya file JPG, JPEG, PNG, atau HEIC yang diizinkan.'); e.target.value = ''; return }
+                    const tooBig = files.filter(f => f.size > 25 * 1024 * 1024)
+                    if (tooBig.length) { alert(`File berikut melebihi 25 MB: ${tooBig.map(f=>f.name).join(', ')}`); e.target.value = ''; return }
+                    const remaining = 5 - existingUrls.length - proofFiles.length
+                    const picked = files.slice(0, remaining)
+                    if (files.length > remaining) alert(`Maksimal 5 foto. ${files.length - remaining} file diabaikan.`)
+                    setProofFiles(prev => [...prev, ...picked])
+                    setProofPreviews(prev => [...prev, ...picked.map(f => URL.createObjectURL(f))])
+                    e.target.value = ''
+                  }}
+                />
+                {/* Existing saved images */}
+                {existingUrls.length > 0 && (
+                  <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:8 }}>
+                    {existingUrls.map((url, i) => (
+                      <div key={url} style={{ position:'relative', width:80, height:80 }}>
+                        <img src={url} alt={`Bukti ${i+1}`} style={{ width:80, height:80, objectFit:'cover', borderRadius:8, border:'1px solid #ddd0c4' }} />
+                        <button onClick={() => setExistingUrls(prev => prev.filter((_,j)=>j!==i))}
+                          style={{ position:'absolute', top:-6, right:-6, width:20, height:20, borderRadius:'50%', border:'none', background:'var(--rose)', color:'white', fontSize:11, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', lineHeight:1 }}>✕</button>
+                      </div>
+                    ))}
+                  </div>
                 )}
-                <button onClick={() => { setProofFile(null); setProofPreview(''); if (proofInputRef.current) proofInputRef.current.value = '' }}
-                  style={{ fontSize:12, color:'var(--rose)', background:'none', border:'none', cursor:'pointer', fontFamily:'DM Sans,sans-serif', marginTop:4, textDecoration:'underline' }}>
-                  ✕ Hapus bukti
-                </button>
+                {/* New file previews */}
+                {proofPreviews.length > 0 && (
+                  <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:8 }}>
+                    {proofPreviews.map((src, i) => (
+                      <div key={i} style={{ position:'relative', width:80, height:80 }}>
+                        {src.startsWith('blob:') && proofFiles[i]?.name.toLowerCase().match(/\.(heic|heif)$/) ? (
+                          <div style={{ width:80, height:80, borderRadius:8, border:'1px solid #ddd0c4', background:'#f5ede3', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:'var(--brown)', textAlign:'center' }}>HEIC</div>
+                        ) : (
+                          <img src={src} alt={`Preview ${i+1}`} style={{ width:80, height:80, objectFit:'cover', borderRadius:8, border:'1px solid #ddd0c4' }} />
+                        )}
+                        <button onClick={() => { setProofFiles(prev => prev.filter((_,j)=>j!==i)); setProofPreviews(prev => prev.filter((_,j)=>j!==i)) }}
+                          style={{ position:'absolute', top:-6, right:-6, width:20, height:20, borderRadius:'50%', border:'none', background:'var(--rose)', color:'white', fontSize:11, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', lineHeight:1 }}>✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {canAdd && (
+                  <button onClick={() => proofInputRef.current?.click()}
+                    style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 16px', borderRadius:8, border:'1.5px dashed #ddd0c4', background:'#faf4ee', fontSize:13, color:'var(--brown)', cursor:'pointer', fontFamily:'DM Sans,sans-serif', width:'100%', justifyContent:'center' }}>
+                    📎 Tambah Foto Bukti ({total}/5)
+                  </button>
+                )}
+                {!canAdd && (
+                  <div style={{ fontSize:12, color:'var(--muted)', textAlign:'center', padding:'8px 0' }}>Maksimal 5 foto tercapai.</div>
+                )}
               </div>
-            ) : null}
-            <button onClick={() => proofInputRef.current?.click()}
-              style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 16px', borderRadius:8, border:'1.5px dashed #ddd0c4', background:'#faf4ee', fontSize:13, color:'var(--brown)', cursor:'pointer', fontFamily:'DM Sans,sans-serif', width:'100%', justifyContent:'center' }}>
-              📎 {proofPreview ? 'Ganti Bukti' : 'Pilih File Bukti'}
-            </button>
-          </div>
+            )
+          })()}
 
           {error && <div style={{ padding:'10px 14px', borderRadius:8, background:'rgba(196,122,114,.1)', border:'1px solid rgba(196,122,114,.35)', fontSize:13, color:'var(--rose)', marginBottom:8 }}>{error}</div>}
         </div>
