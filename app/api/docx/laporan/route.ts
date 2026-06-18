@@ -212,7 +212,7 @@ export async function GET(req: NextRequest) {
     `<w:p>${SIG_PPR}${mvRun('Tech Lead')}</w:p>` +
     `</w:tc>` +
     `<w:tc><w:tcPr><w:tcW w:w="${B2COL}" w:type="dxa"/></w:tcPr>` +
-    `<w:p>${SIG_PPR}${mvRun('Vania Sanjaya')}</w:p>` +
+    `<w:p>${SIG_PPR}</w:p>` +
     `</w:tc>` +
     `</w:tr>` +
     `</w:tbl>`
