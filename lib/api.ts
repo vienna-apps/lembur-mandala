@@ -79,6 +79,18 @@ export async function updateGmail(gmail: string | null): Promise<void> {
   await apiFetch('/api/profile', { method: 'PATCH', body: JSON.stringify({ gmail }) })
 }
 
+// ── DOCX download (needs auth header — window.open won't work) ───────────────
+export async function downloadDocx(apiPath: string, filename: string): Promise<void> {
+  const headers = await authHeader()
+  const res = await fetch(apiPath, { headers })
+  if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? res.statusText) }
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = filename; a.click()
+  URL.revokeObjectURL(url)
+}
+
 // ── Upload xlsx ───────────────────────────────────────
 export async function uploadXlsx(file: File, bulan: string, commit: boolean) {
   const { data } = await getSupabaseClient().auth.getSession()

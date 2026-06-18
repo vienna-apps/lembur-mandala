@@ -3,9 +3,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Profile, LemburMonth, LemburEvent, Deadline } from '@/lib/types'
 import { bulanLabel, bulanShort, currentBulan } from '@/lib/types'
-import { getAdminMonth, setDeadline, getDeadlines } from '@/lib/api'
+import { getAdminMonth, setDeadline, getDeadlines, getMonthDetail, deleteEvent, downloadDocx } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import EventList from './EventList'
+import AddEventPanel from './AddEventPanel'
 
 interface Props { profile: Profile }
 
@@ -44,6 +45,14 @@ export default function AdminDashboard({ profile }: Props) {
   const [loading,        setLoading]        = useState(true)
   const [dlEditing,      setDlEditing]      = useState<string|null>(null)
   const [dlInputs,       setDlInputs]       = useState<Record<string,string>>({})
+  const [downloading,    setDownloading]    = useState<'laporan'|'moo'|null>(null)
+
+  // Admin's own lembur
+  const [myEvents,       setMyEvents]       = useState<LemburEvent[]>([])
+  const [myPanelOpen,    setMyPanelOpen]    = useState(false)
+  const [showEventForm,  setShowEventForm]  = useState(false)
+  const [editingMyEvent, setEditingMyEvent] = useState<LemburEvent|null>(null)
+  const [copyPrefill,    setCopyPrefill]    = useState<Partial<LemburEvent>|undefined>()
 
   const loadDeadlines = useCallback(async () => {
     const all = await getDeadlines()
@@ -65,19 +74,54 @@ export default function AdminDashboard({ profile }: Props) {
     setLoading(false)
   }, [])
 
+  const loadMyEvents = useCallback(async (bulan: string) => {
+    try {
+      const { events } = await getMonthDetail(bulan)
+      setMyEvents(events ?? [])
+    } catch { setMyEvents([]) }
+  }, [])
+
   useEffect(() => {
     loadDeadlines()
   }, [loadDeadlines])
 
   useEffect(() => {
     loadMonth(activeBulan)
-  }, [activeBulan, loadMonth])
+    loadMyEvents(activeBulan)
+  }, [activeBulan, loadMonth, loadMyEvents])
 
   async function saveDL(bulan: string) {
     const date = dlInputs[bulan] ?? null
     await setDeadline(bulan, date)
     await loadDeadlines()
     setDlEditing(null)
+  }
+
+  async function handleDownload(type: 'laporan'|'moo') {
+    setDownloading(type)
+    try {
+      if (type === 'laporan') {
+        await downloadDocx(`/api/docx/laporan?bulan=${activeBulan}`, `Laporan-Lembur-Mandala-${activeBulan}.docx`)
+      } else {
+        await downloadDocx(`/api/docx/moo?bulan=${activeBulan}`, `MoO-Mandala-${activeBulan}.zip`)
+      }
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Gagal mengunduh dokumen.')
+    } finally {
+      setDownloading(null)
+    }
+  }
+
+  function openCopyForm(ev: LemburEvent) {
+    setCopyPrefill({ hari_tanggal: ev.hari_tanggal, project: ev.project, kegiatan: ev.kegiatan, dari_jam: ev.dari_jam, sampai_jam: ev.sampai_jam, durasi: ev.durasi, standby: ev.standby, akhir_pekan: ev.akhir_pekan, wfo: ev.wfo })
+    setEditingMyEvent(null)
+    setShowEventForm(true)
+    setMyPanelOpen(true)
+  }
+
+  async function handleDeleteMyEvent(id: string) {
+    await deleteEvent(id)
+    await loadMyEvents(activeBulan)
   }
 
   const dl = deadlines[activeBulan]
@@ -173,13 +217,13 @@ export default function AdminDashboard({ profile }: Props) {
               <div style={{ fontSize:12, color:'var(--muted)', marginTop:3 }}>{submitted.length} orang sudah submit · Periode: 1–{new Date(Number(activeBulan.split('-')[0]), Number(activeBulan.split('-')[1]), 0).getDate()} {bulanShort(activeBulan)}</div>
             </div>
             <div style={{ display:'flex', gap:7, flexShrink:0, flexWrap:'wrap' }}>
-              <button onClick={() => window.open(`/api/docx/laporan?bulan=${activeBulan}`)}
-                style={{ display:'flex', alignItems:'center', gap:6, padding:'9px 14px', borderRadius:'var(--r2)', border:'1px solid var(--border)', background:'var(--bg3)', color:'var(--cream)', fontFamily:'DM Sans,sans-serif', fontSize:12, fontWeight:500, cursor:'pointer', whiteSpace:'nowrap' }}>
-                📄 Laporan Lembur .docx
+              <button onClick={() => handleDownload('laporan')} disabled={downloading !== null}
+                style={{ display:'flex', alignItems:'center', gap:6, padding:'9px 14px', borderRadius:'var(--r2)', border:'1px solid var(--border)', background:'var(--bg3)', color:'var(--cream)', fontFamily:'DM Sans,sans-serif', fontSize:12, fontWeight:500, cursor: downloading ? 'not-allowed' : 'pointer', whiteSpace:'nowrap', opacity: downloading === 'laporan' ? .6 : 1 }}>
+                {downloading === 'laporan' ? '⏳ Mengunduh…' : '📄 Laporan Lembur .docx'}
               </button>
-              <button onClick={() => window.open(`/api/docx/moo?bulan=${activeBulan}`)}
-                style={{ display:'flex', alignItems:'center', gap:6, padding:'9px 14px', borderRadius:'var(--r2)', border:'none', background:'linear-gradient(135deg,var(--burg2),var(--burg))', color:'white', fontFamily:'DM Sans,sans-serif', fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
-                ✦ Generate MoO .docx
+              <button onClick={() => handleDownload('moo')} disabled={downloading !== null}
+                style={{ display:'flex', alignItems:'center', gap:6, padding:'9px 14px', borderRadius:'var(--r2)', border:'none', background:'linear-gradient(135deg,var(--burg2),var(--burg))', color:'white', fontFamily:'DM Sans,sans-serif', fontSize:12, fontWeight:600, cursor: downloading ? 'not-allowed' : 'pointer', whiteSpace:'nowrap', opacity: downloading === 'moo' ? .6 : 1 }}>
+                {downloading === 'moo' ? '⏳ Mengunduh…' : '✦ Generate MoO .zip'}
               </button>
             </div>
           </div>
@@ -253,7 +297,7 @@ export default function AdminDashboard({ profile }: Props) {
                     </div>
                     {expanded && (
                       <div style={{ margin:'0 8px 8px 8px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:'var(--r2)', overflow:'hidden' }}>
-                        <EventList events={sub.events??[]} readOnly />
+                        <EventList events={sub.events??[]} readOnly onCopy={openCopyForm} />
                       </div>
                     )}
                   </div>
@@ -261,8 +305,50 @@ export default function AdminDashboard({ profile }: Props) {
               })}
             </div>
           )}
+
+          {/* Lembur Saya */}
+          {!loading && (
+            <div style={{ borderTop:'1px solid var(--border2)', margin:'0 0 0 0' }}>
+              <div onClick={() => setMyPanelOpen(o => !o)}
+                style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px', cursor:'pointer' }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background='rgba(200,153,78,.04)'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background='transparent'}>
+                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                  <span style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:1.2, color:'var(--gold)' }}>✦ Lembur Saya</span>
+                  <span style={{ fontSize:11, color:'var(--muted)' }}>{myEvents.length} events · {myEvents.reduce((s,e)=>s+e.total_jam,0).toFixed(1)}j</span>
+                </div>
+                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                  <button onClick={e => { e.stopPropagation(); setCopyPrefill(undefined); setEditingMyEvent(null); setShowEventForm(true); setMyPanelOpen(true) }}
+                    style={{ padding:'5px 12px', borderRadius:'var(--r2)', border:'1px solid var(--border)', background:'var(--bg3)', color:'var(--cream)', fontFamily:'DM Sans,sans-serif', fontSize:11, fontWeight:500, cursor:'pointer' }}>
+                    ＋ Tambah Event
+                  </button>
+                  <span style={{ color:'var(--muted)', fontSize:13 }}>{myPanelOpen ? '▲' : '▼'}</span>
+                </div>
+              </div>
+              {myPanelOpen && (
+                <div style={{ borderTop:'1px solid var(--border2)' }}>
+                  <EventList
+                    events={myEvents}
+                    onEdit={ev => { setEditingMyEvent(ev); setCopyPrefill(undefined); setShowEventForm(true) }}
+                    onDelete={handleDeleteMyEvent}
+                  />
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
+
+      {showEventForm && (
+        <AddEventPanel
+          profile={profile}
+          bulan={activeBulan}
+          editingEvent={editingMyEvent}
+          prefill={copyPrefill}
+          onClose={() => { setShowEventForm(false); setEditingMyEvent(null); setCopyPrefill(undefined) }}
+          onSaved={() => { setShowEventForm(false); setEditingMyEvent(null); setCopyPrefill(undefined); loadMyEvents(activeBulan) }}
+        />
+      )}
     </div>
   )
 }

@@ -9,6 +9,7 @@ interface Props {
   profile: Profile
   bulan: string
   editingEvent: LemburEvent | null
+  prefill?: Partial<LemburEvent>
   onClose: () => void
   onSaved: () => void
 }
@@ -21,20 +22,21 @@ function isWeekend(dateStr: string) {
   return d.getDay() === 0 || d.getDay() === 6
 }
 
-export default function AddEventPanel({ profile, bulan, editingEvent, onClose, onSaved }: Props) {
+export default function AddEventPanel({ profile, bulan, editingEvent, prefill, onClose, onSaved }: Props) {
   const ev = editingEvent
+  const pre = prefill ?? {}
   const today = new Date().toISOString().slice(0,10)
 
-  const [date,       setDate]       = useState(ev?.hari_tanggal ?? today)
-  const [project,    setProject]    = useState(ev?.project ?? '')
-  const [kegiatan,   setKegiatan]   = useState<string[]>(ev?.kegiatan?.length ? ev.kegiatan : [''])
-  const [dariJam,    setDariJam]    = useState(ev?.dari_jam  ?? '21:00')
-  const [sampaiJam,  setSampaiJam]  = useState(ev?.sampai_jam ?? '23:00')
-  const [durasi,     setDurasi]     = useState<number>(ev?.durasi ?? 2)
+  const [date,       setDate]       = useState(ev?.hari_tanggal ?? pre.hari_tanggal ?? today)
+  const [project,    setProject]    = useState(ev?.project      ?? pre.project      ?? '')
+  const [kegiatan,   setKegiatan]   = useState<string[]>(ev?.kegiatan?.length ? ev.kegiatan : pre.kegiatan?.length ? pre.kegiatan : [''])
+  const [dariJam,    setDariJam]    = useState(ev?.dari_jam     ?? pre.dari_jam     ?? '21:00')
+  const [sampaiJam,  setSampaiJam]  = useState(ev?.sampai_jam   ?? pre.sampai_jam   ?? '23:00')
+  const [durasi,     setDurasi]     = useState<number>(ev?.durasi ?? pre.durasi ?? 2)
   const [durasiFree, setDurasiFree] = useState(false)  // true = user edited manually
-  const [standby,    setStandby]    = useState(ev?.standby     ?? false)
-  const [akhirPekan, setAkhirPekan] = useState(ev?.akhir_pekan ?? false)
-  const [wfo,        setWfo]        = useState(ev?.wfo         ?? false)
+  const [standby,    setStandby]    = useState(ev?.standby      ?? pre.standby      ?? false)
+  const [akhirPekan, setAkhirPekan] = useState(ev?.akhir_pekan  ?? pre.akhir_pekan  ?? false)
+  const [wfo,        setWfo]        = useState(ev?.wfo          ?? pre.wfo          ?? false)
   const [saving,     setSaving]     = useState(false)
   const [error,      setError]      = useState('')
   const [suggestions, setSuggestions] = useState<string[]>(DEFAULT_SUGGESTIONS)

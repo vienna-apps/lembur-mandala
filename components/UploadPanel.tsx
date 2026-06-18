@@ -1,8 +1,9 @@
 'use client'
 import { useState, useRef } from 'react'
-import type { Profile } from '@/lib/types'
+import type { Profile, LemburEvent } from '@/lib/types'
 import { bulanLabel } from '@/lib/types'
-import { uploadXlsx } from '@/lib/api'
+import { uploadXlsx, getMonthDetail, deleteEvent } from '@/lib/api'
+import AddEventPanel from './AddEventPanel'
 
 interface ParsedRow {
   hari_tanggal: string
@@ -27,13 +28,15 @@ interface Props {
 }
 
 export default function UploadPanel({ profile, bulan, onClose, onSaved }: Props) {
-  const [file,       setFile]       = useState<File | null>(null)
-  const [stage,      setStage]      = useState<'pick'|'preview'|'saving'|'done'>('pick')
-  const [parsed,     setParsed]     = useState<ParsedRow[]>([])
-  const [errors,     setErrors]     = useState<ParseError[]>([])
-  const [parsedName, setParsedName] = useState('')
-  const [parsedNik,  setParsedNik]  = useState('')
-  const [globalErr,  setGlobalErr]  = useState('')
+  const [file,        setFile]        = useState<File | null>(null)
+  const [stage,       setStage]       = useState<'pick'|'preview'|'saving'|'done'>('pick')
+  const [parsed,      setParsed]      = useState<ParsedRow[]>([])
+  const [errors,      setErrors]      = useState<ParseError[]>([])
+  const [parsedName,  setParsedName]  = useState('')
+  const [parsedNik,   setParsedNik]   = useState('')
+  const [globalErr,   setGlobalErr]   = useState('')
+  const [savedEvents, setSavedEvents] = useState<LemburEvent[]>([])
+  const [editingEv,   setEditingEv]   = useState<LemburEvent | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   async function handleParse() {
@@ -57,11 +60,26 @@ export default function UploadPanel({ profile, bulan, onClose, onSaved }: Props)
     setStage('saving')
     try {
       await uploadXlsx(file, bulan, true)
+      // Fetch the saved events so user can review & edit them
+      const { events } = await getMonthDetail(bulan)
+      setSavedEvents(events ?? [])
       setStage('done')
     } catch (e: unknown) {
       setGlobalErr(e instanceof Error ? e.message : 'Gagal menyimpan.')
       setStage('preview')
     }
+  }
+
+  async function handleDeleteSaved(id: string) {
+    if (!confirm('Hapus event ini?')) return
+    await deleteEvent(id)
+    const { events } = await getMonthDetail(bulan)
+    setSavedEvents(events ?? [])
+  }
+
+  function fmtDate(iso: string) {
+    const d = new Date(iso + 'T00:00:00')
+    return { day: d.getDate(), mon: d.toLocaleDateString('id-ID', { month: 'short' }).toUpperCase() }
   }
 
   return (
@@ -81,17 +99,58 @@ export default function UploadPanel({ profile, bulan, onClose, onSaved }: Props)
 
         <div style={{ padding:'22px 28px', flex:1 }}>
 
-          {/* Success */}
+          {/* ── Done: show saved events with edit/delete ── */}
           {stage === 'done' && (
-            <div style={{ textAlign:'center', padding:'40px 20px' }}>
-              <div style={{ fontSize:48, marginBottom:16 }}>✅</div>
-              <div style={{ fontFamily:'Cormorant Garamond,serif', fontSize:24, fontWeight:700, color:'var(--text)', marginBottom:8 }}>{parsed.length} event berhasil diimport!</div>
-              <div style={{ fontSize:14, color:'var(--muted)', marginBottom:28 }}>Semua event dari file .xlsx sudah tersimpan ke {bulanLabel(bulan)}.</div>
-              <button onClick={onSaved} className="btn-primary" style={{ width:'100%' }}>Lihat Event →</button>
+            <div>
+              <div style={{ display:'flex', alignItems:'center', gap:10, padding:'14px 16px', borderRadius:'var(--r2)', background:'rgba(58,158,95,.08)', border:'1px solid rgba(58,158,95,.25)', marginBottom:20 }}>
+                <span style={{ fontSize:22 }}>✅</span>
+                <div>
+                  <div style={{ fontSize:14, fontWeight:600, color:'#6fcf97' }}>{savedEvents.length} event berhasil diimport!</div>
+                  <div style={{ fontSize:12, color:'var(--muted)', marginTop:1 }}>Kamu bisa edit atau hapus event di bawah ini sebelum submit.</div>
+                </div>
+              </div>
+
+              {/* Event list with edit/delete */}
+              {savedEvents.length === 0 ? (
+                <div style={{ textAlign:'center', padding:30, color:'var(--muted)', fontSize:13 }}>Tidak ada event tersimpan.</div>
+              ) : (
+                <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:20 }}>
+                  {savedEvents.map(ev => {
+                    const { day, mon } = fmtDate(ev.hari_tanggal)
+                    return (
+                      <div key={ev.id} style={{ display:'grid', gridTemplateColumns:'auto 1fr auto', alignItems:'center', gap:12, padding:'12px 14px', borderRadius:'var(--r2)', background:'white', border:'1px solid #e8d0b8' }}>
+                        {/* Date tile */}
+                        <div style={{ width:40, height:40, borderRadius:8, background:'#f5ede3', border:'1px solid #e8d0b8', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                          <div style={{ fontSize:14, fontWeight:700, color:'var(--gold)', lineHeight:1 }}>{day}</div>
+                          <div style={{ fontSize:9, color:'var(--muted)', textTransform:'uppercase', letterSpacing:.5 }}>{mon}</div>
+                        </div>
+                        {/* Info */}
+                        <div>
+                          <div style={{ display:'inline-flex', alignItems:'center', background:'rgba(200,153,78,.12)', border:'1px solid rgba(200,153,78,.25)', borderRadius:20, padding:'2px 8px', fontSize:10, color:'var(--gold)', fontWeight:600, marginBottom:3 }}>{ev.project}</div>
+                          <div style={{ fontSize:13, color:'var(--text)', lineHeight:1.35 }}>{ev.kegiatan.join(' · ')}</div>
+                          <div style={{ fontSize:11, color:'var(--muted)', marginTop:3, fontFamily:'monospace' }}>
+                            {ev.dari_jam}–{ev.sampai_jam} · {ev.durasi}j → <strong style={{ color:'var(--brown)' }}>{ev.total_jam.toFixed(2)}j</strong>
+                            {ev.akhir_pekan && <span style={{ marginLeft:6, color:'var(--amber)', fontWeight:600 }}>Weekend</span>}
+                            {ev.standby && <span style={{ marginLeft:6, color:'var(--rose)' }}>Standby</span>}
+                            {ev.wfo ? <span style={{ marginLeft:6, color:'#6db880' }}>WFO</span> : <span style={{ marginLeft:6, color:'var(--muted)' }}>WFH</span>}
+                          </div>
+                        </div>
+                        {/* Actions */}
+                        <div style={{ display:'flex', gap:5 }}>
+                          <button onClick={() => setEditingEv(ev)} title="Edit"
+                            style={{ width:30, height:30, borderRadius:7, border:'1px solid #e8d0b8', background:'#f5ede3', color:'var(--brown)', fontSize:14, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>✎</button>
+                          <button onClick={() => handleDeleteSaved(ev.id)} title="Hapus"
+                            style={{ width:30, height:30, borderRadius:7, border:'1px solid rgba(196,122,114,.3)', background:'rgba(196,122,114,.06)', color:'var(--rose)', fontSize:13, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           )}
 
-          {/* Pick file */}
+          {/* ── Pick file ── */}
           {stage === 'pick' && (
             <>
               <div style={{ marginBottom:20, padding:'24px', border:'2px dashed #ddd0c4', borderRadius:'var(--r)', textAlign:'center', cursor:'pointer', background:'#fff8f2' }}
@@ -131,10 +190,9 @@ export default function UploadPanel({ profile, bulan, onClose, onSaved }: Props)
             </>
           )}
 
-          {/* Preview */}
+          {/* ── Preview ── */}
           {(stage === 'preview' || stage === 'saving') && (
             <>
-              {/* Parsed identity */}
               {parsedName && (
                 <div style={{ padding:'10px 14px', borderRadius:8, background:'rgba(200,153,78,.08)', border:'1px solid rgba(200,153,78,.25)', fontSize:13, color:'var(--brown)', marginBottom:16 }}>
                   👤 Terdeteksi: <strong>{parsedName}</strong> — NIK {parsedNik}
@@ -144,7 +202,6 @@ export default function UploadPanel({ profile, bulan, onClose, onSaved }: Props)
                 </div>
               )}
 
-              {/* Errors */}
               {errors.length > 0 && (
                 <div style={{ marginBottom:16 }}>
                   <div style={{ fontSize:13, fontWeight:600, color:'var(--rose)', marginBottom:8 }}>⚠️ {errors.length} baris perlu diperbaiki:</div>
@@ -159,7 +216,6 @@ export default function UploadPanel({ profile, bulan, onClose, onSaved }: Props)
                 </div>
               )}
 
-              {/* Parsed preview */}
               {parsed.length > 0 && (
                 <>
                   <div style={{ fontSize:13, fontWeight:600, color:'var(--brown)', marginBottom:10 }}>✅ {parsed.length} event siap diimport:</div>
@@ -200,7 +256,31 @@ export default function UploadPanel({ profile, bulan, onClose, onSaved }: Props)
             </button>
           </div>
         )}
+
+        {stage === 'done' && (
+          <div style={{ display:'flex', gap:10, padding:'18px 28px 26px', borderTop:'1px solid #e8d8c8', background:'var(--cream2)', position:'sticky', bottom:0 }}>
+            <button onClick={() => { onSaved() }}
+              className="btn-primary" style={{ flex:1 }}>
+              Selesai · Lihat Semua Event →
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Edit panel — stacked on top of upload panel */}
+      {editingEv && (
+        <AddEventPanel
+          profile={profile}
+          bulan={bulan}
+          editingEvent={editingEv}
+          onClose={() => setEditingEv(null)}
+          onSaved={async () => {
+            setEditingEv(null)
+            const { events } = await getMonthDetail(bulan)
+            setSavedEvents(events ?? [])
+          }}
+        />
+      )}
     </div>
   )
 }

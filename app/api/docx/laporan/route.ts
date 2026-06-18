@@ -2,35 +2,76 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAdminClient, verifyToken } from '@/lib/db'
 import { bulanLabel } from '@/lib/types'
 import type { LemburEvent, Profile } from '@/lib/types'
-import {
-  Document, Packer, Paragraph, Table, TableRow, TableCell,
-  TextRun, WidthType, AlignmentType, BorderStyle, HeadingLevel,
-  ShadingType,
-} from 'docx'
+import { readFileSync } from 'fs'
+import { join } from 'path'
+import PizZip from 'pizzip'
 
 function token(req: NextRequest) {
   return req.headers.get('authorization')?.replace('Bearer ', '') ?? ''
 }
 
-function cell(text: string, bold = false, shade = false): TableCell {
-  return new TableCell({
-    shading: shade ? { type: ShadingType.SOLID, color: 'D9D9D9' } : undefined,
-    children: [new Paragraph({
-      children: [new TextRun({ text, bold, size: 20 })],
-      alignment: AlignmentType.CENTER,
-    })],
+function fmtDate(iso: string) {
+  return new Date(iso + 'T00:00:00').toLocaleDateString('id-ID', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
 }
 
-function dataCell(text: string): TableCell {
-  return new TableCell({
-    children: [new Paragraph({ children: [new TextRun({ text, size: 20 })] })],
-  })
+function escapeXml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;')
 }
 
-function noBorder() {
-  const nb = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' }
-  return { top: nb, bottom: nb, left: nb, right: nb }
+const RPRM = '<w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr>'
+function mvRun(text: string): string {
+  const space = (text.startsWith(' ') || text.endsWith(' ')) ? ' xml:space="preserve"' : ''
+  return `<w:r>${RPRM}<w:t${space}>${escapeXml(text)}</w:t></w:r>`
+}
+
+const RPRD = '<w:rPr><w:color w:val="262626"/><w:szCs w:val="16"/></w:rPr>'
+function dataRun(text: string): string {
+  const space = (text.startsWith(' ') || text.endsWith(' ')) ? ' xml:space="preserve"' : ''
+  return `<w:r>${RPRD}<w:t${space}>${escapeXml(text)}</w:t></w:r>`
+}
+
+// Summary table column widths
+const SUM_WIDTHS = [3237, 3237, 3238, 3238]
+// Detail table column widths
+const DET_WIDTHS = [2258, 4263, 1344, 708, 922, 779, 1492, 1180]
+
+const PPR_360 = '<w:pPr><w:spacing w:line="360" w:lineRule="auto"/></w:pPr>'
+
+function summaryRow(cells: string[]): string {
+  const tcCells = cells.map((text, i) => (
+    `<w:tc>` +
+    `<w:tcPr><w:tcW w:w="${SUM_WIDTHS[i]}" w:type="dxa"/></w:tcPr>` +
+    `<w:p>${PPR_360}${dataRun(text)}</w:p>` +
+    `</w:tc>`
+  )).join('')
+  return `<w:tr><w:trPr><w:cnfStyle w:val="000000100000" w:firstRow="0" w:lastRow="0" w:firstColumn="0" w:lastColumn="0" w:oddVBand="0" w:evenVBand="0" w:oddHBand="1" w:evenHBand="0" w:firstRowFirstColumn="0" w:firstRowLastColumn="0" w:lastRowFirstColumn="0" w:lastRowLastColumn="0"/></w:trPr>${tcCells}</w:tr>`
+}
+
+function detailRow(cells: string[]): string {
+  const tcCells = cells.map((text, i) => (
+    `<w:tc>` +
+    `<w:tcPr><w:tcW w:w="${DET_WIDTHS[i]}" w:type="dxa"/></w:tcPr>` +
+    `<w:p>${PPR_360}${dataRun(text)}</w:p>` +
+    `</w:tc>`
+  )).join('')
+  return `<w:tr><w:trPr><w:cnfStyle w:val="000000100000" w:firstRow="0" w:lastRow="0" w:firstColumn="0" w:lastColumn="0" w:oddVBand="0" w:evenVBand="0" w:oddHBand="1" w:evenHBand="0" w:firstRowFirstColumn="0" w:firstRowLastColumn="0" w:lastRowFirstColumn="0" w:lastRowLastColumn="0"/></w:trPr>${tcCells}</w:tr>`
+}
+
+// Inject a text run into an empty paragraph cell identified by paraId
+function injectIntoEmptyPara(xml: string, paraId: string, text: string): string {
+  // Empty para has: <w:p ...><w:pPr>...</w:pPr></w:p>
+  // We replace the closing </w:pPr></w:p> with </w:pPr><w:r>...<w:t>text</w:t></w:r></w:p>
+  const idx = xml.indexOf(`paraId="${paraId}"`)
+  if (idx < 0) return xml
+  const pStart = xml.lastIndexOf('<w:p ', idx)
+  const pEnd = xml.indexOf('</w:p>', pStart) + 6
+  const para = xml.substring(pStart, pEnd)
+  // Find end of pPr
+  const pprEnd = para.indexOf('</w:pPr>') + 8
+  const newPara = para.substring(0, pprEnd) + mvRun(text) + para.substring(pprEnd, para.length - 6) + '</w:p>'
+  return xml.substring(0, pStart) + newPara + xml.substring(pEnd)
 }
 
 // GET /api/docx/laporan?bulan=2026-06
@@ -45,7 +86,6 @@ export async function GET(req: NextRequest) {
   const bulan = req.nextUrl.searchParams.get('bulan') ?? ''
   if (!bulan) return NextResponse.json({ error: 'bulan required' }, { status: 400 })
 
-  // Load all submissions for this bulan
   const { data: months } = await db
     .from('lembur_months')
     .select('*, profile:profiles(*), events:lembur_events(*)')
@@ -56,110 +96,78 @@ export async function GET(req: NextRequest) {
 
   const bulanLbl = bulanLabel(bulan)
 
-  // Summary per person
   interface PersonSummary { profile: Profile; events: LemburEvent[]; totalDurasi: number; totalKomp: number }
   const summary: PersonSummary[] = months.map((m: { profile: Profile; events: LemburEvent[] }) => {
-    const events: LemburEvent[] = m.events ?? []
+    const events = m.events ?? []
     return {
       profile: m.profile,
       events,
-      totalDurasi: events.reduce((s,e) => s + e.durasi, 0),
-      totalKomp:   events.reduce((s,e) => s + e.total_jam, 0),
+      totalDurasi: events.reduce((s, e) => s + e.durasi, 0),
+      totalKomp: events.reduce((s, e) => s + e.total_jam, 0),
     }
   })
 
-  const fmtDate = (iso: string) => new Date(iso+'T00:00:00').toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})
+  const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
 
-  const doc = new Document({
-    sections: [{
-      children: [
-        // Title
-        new Paragraph({ children: [new TextRun({ text: 'LAPORAN LEMBUR', bold: true, size: 28 })], alignment: AlignmentType.CENTER, heading: HeadingLevel.HEADING_1 }),
-        new Paragraph({ children: [new TextRun({ text: `Periode: ${bulanLbl}`, size: 24 })], alignment: AlignmentType.CENTER }),
-        new Paragraph({ text: '' }),
+  const templateBuf = readFileSync(join(process.cwd(), 'templates', 'laporan-template.docx'))
+  const zip = new PizZip(templateBuf)
+  let xml = zip.file('word/document.xml')!.asText()
 
-        // Header table: project + periode
-        new Table({
-          width: { size: 100, type: WidthType.PERCENTAGE },
-          rows: [
-            new TableRow({ children: [
-              cell('Nama Project', true, true), cell('MANDALA', false, false),
-              cell('Periode', true, true), cell(bulanLbl, false, false),
-            ]}),
-          ],
-        }),
-        new Paragraph({ text: '' }),
+  // ── 1. Info table value cells (paraIds from template) ─────────────────────
+  // Row 0: Nama project → "MANDALA"
+  xml = injectIntoEmptyPara(xml, '3877C8AA', 'MANDALA')
+  // Row 1: Periode/bulan → bulanLbl
+  xml = injectIntoEmptyPara(xml, '6495C9E2', bulanLbl)
 
-        // Summary per person
-        new Paragraph({ children: [new TextRun({ text: 'Rekapitulasi Per Karyawan', bold: true, size: 22 })] }),
-        new Table({
-          width: { size: 100, type: WidthType.PERCENTAGE },
-          rows: [
-            new TableRow({ children: [
-              cell('NIK', true, true), cell('Nama', true, true),
-              cell('Total Jam Lembur', true, true), cell('Total Lembur Revisi', true, true),
-            ]}),
-            ...summary.map(p => new TableRow({ children: [
-              dataCell(p.profile.nik),
-              dataCell(p.profile.nama),
-              dataCell(p.totalDurasi.toFixed(2)),
-              dataCell(p.totalKomp.toFixed(2)),
-            ]})),
-          ],
-        }),
-        new Paragraph({ text: '' }),
+  // ── 2. Summary table rows ──────────────────────────────────────────────────
+  // Table 0 = info, Table 1 = summary
+  const infoTblEnd = xml.indexOf('</w:tbl>') + 8
+  const sumTblStart = xml.indexOf('<w:tbl>', infoTblEnd)
+  const sumTblEnd = xml.indexOf('</w:tbl>', sumTblStart) + 8
+  const sumHeaderEnd = xml.indexOf('</w:tr>', sumTblStart) + 7
 
-        // Detail per event
-        new Paragraph({ children: [new TextRun({ text: 'Detail Kegiatan', bold: true, size: 22 })] }),
-        new Table({
-          width: { size: 100, type: WidthType.PERCENTAGE },
-          rows: [
-            new TableRow({ children: [
-              cell('Nama', true, true), cell('Kegiatan', true, true), cell('Tanggal', true, true),
-              cell('Standby', true, true), cell('Dari', true, true), cell('Sampai', true, true),
-              cell('Durasi', true, true), cell('Akhir Pekan', true, true), cell('WFO', true, true), cell('Total', true, true),
-            ]}),
-            ...summary.flatMap(p => p.events.map((e, i) => new TableRow({ children: [
-              dataCell(i === 0 ? p.profile.nama : ''),
-              dataCell(e.kegiatan.join('; ')),
-              dataCell(fmtDate(e.hari_tanggal)),
-              dataCell(e.standby ? 'Ya' : 'Tidak'),
-              dataCell(e.dari_jam),
-              dataCell(e.sampai_jam),
-              dataCell(e.durasi.toFixed(2)),
-              dataCell(e.akhir_pekan ? 'Ya' : 'Tidak'),
-              dataCell(e.wfo ? 'Ya' : 'Tidak'),
-              dataCell(e.total_jam.toFixed(2)),
-            ]}))),
-          ],
-        }),
-        new Paragraph({ text: '' }),
+  const sumRows = summary.map(p => summaryRow([
+    p.profile.nik,
+    p.profile.nama,
+    p.totalDurasi.toFixed(2),
+    p.totalKomp.toFixed(2),
+  ])).join('')
 
-        // Signatures
-        new Paragraph({ children: [new TextRun({ text: 'Mengetahui,', size: 20 })] }),
-        new Table({
-          width: { size: 100, type: WidthType.PERCENTAGE },
-          rows: [
-            new TableRow({ children: [
-              new TableCell({ borders: noBorder(), children: [new Paragraph({ children: [new TextRun({ text: 'Vania Sanjaya', bold: true, size: 20 })], alignment: AlignmentType.CENTER })] }),
-              new TableCell({ borders: noBorder(), children: [new Paragraph({ children: [new TextRun({ text: 'Silvia M. Purwani', bold: true, size: 20 })], alignment: AlignmentType.CENTER })] }),
-              new TableCell({ borders: noBorder(), children: [new Paragraph({ children: [new TextRun({ text: 'M. Rizki', bold: true, size: 20 })], alignment: AlignmentType.CENTER })] }),
-              new TableCell({ borders: noBorder(), children: [new Paragraph({ children: [new TextRun({ text: 'Ginan G. Pramadita', bold: true, size: 20 })], alignment: AlignmentType.CENTER })] }),
-            ]}),
-            new TableRow({ children: [
-              new TableCell({ borders: noBorder(), children: [new Paragraph({ children: [new TextRun({ text: 'Tech Lead', size: 20 })], alignment: AlignmentType.CENTER })] }),
-              new TableCell({ borders: noBorder(), children: [new Paragraph({ children: [new TextRun({ text: 'PM', size: 20 })], alignment: AlignmentType.CENTER })] }),
-              new TableCell({ borders: noBorder(), children: [new Paragraph({ children: [new TextRun({ text: 'Manager', size: 20 })], alignment: AlignmentType.CENTER })] }),
-              new TableCell({ borders: noBorder(), children: [new Paragraph({ children: [new TextRun({ text: 'Division Head', size: 20 })], alignment: AlignmentType.CENTER })] }),
-            ]}),
-          ],
-        }),
-      ],
-    }],
-  })
+  xml = xml.substring(0, sumHeaderEnd) + sumRows + '</w:tbl>' + xml.substring(sumTblEnd)
 
-  const buf = await Packer.toBuffer(doc)
-  return new Response(new Uint8Array(buf), {
+  // ── 3. Detail table rows ───────────────────────────────────────────────────
+  // After injection of summary rows, recompute table positions
+  const newSumTblEnd = xml.indexOf('</w:tbl>', infoTblEnd) + 8
+  const detTblStart = xml.indexOf('<w:tbl>', newSumTblEnd)
+  const detTblEnd = xml.indexOf('</w:tbl>', detTblStart) + 8
+  const detHeaderEnd = xml.indexOf('</w:tr>', detTblStart) + 7
+
+  const detRows = summary.flatMap(p =>
+    p.events.map((e, i) => detailRow([
+      i === 0 ? p.profile.nama : '',
+      e.kegiatan.join('; '),
+      fmtDate(e.hari_tanggal),
+      e.dari_jam,
+      e.sampai_jam,
+      e.durasi.toFixed(2),
+      e.akhir_pekan ? 'Ya' : 'Tidak',
+      e.total_jam.toFixed(2),
+    ]))
+  ).join('')
+
+  xml = xml.substring(0, detHeaderEnd) + detRows + '</w:tbl>' + xml.substring(detTblEnd)
+
+  // ── 4. Kota date paragraph (paraId 55F83FB4) ──────────────────────────────
+  const KOTA_PPR = '<w:pPr><w:spacing w:line="360" w:lineRule="auto"/><w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr></w:pPr>'
+  xml = xml.replace(
+    /<w:p [^>]*55F83FB4[^>]*>[\s\S]*?<\/w:p>/,
+    `<w:p w14:paraId="55F83FB4" w14:textId="101DBECB" w:rsidR="00052797" w:rsidRDefault="0022747D" w:rsidP="006F0248">${KOTA_PPR}${mvRun(`Bandung, ${today}`)}</w:p>`,
+  )
+
+  zip.file('word/document.xml', xml)
+  const buf = zip.generate({ type: 'nodebuffer' })
+
+  return new Response(buf, {
     headers: {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'Content-Disposition': `attachment; filename="Laporan-Lembur-Mandala-${bulan}.docx"`,
