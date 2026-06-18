@@ -91,6 +91,17 @@ export async function downloadDocx(apiPath: string, filename: string): Promise<v
   URL.revokeObjectURL(url)
 }
 
+// ── Upload proof image ────────────────────────────────
+export async function uploadProof(file: File, userId: string): Promise<string> {
+  const supabase = getSupabaseClient()
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
+  const path = `${userId}/${Date.now()}.${ext}`
+  const { error } = await supabase.storage.from('lembur-proofs').upload(path, file, { upsert: true })
+  if (error) throw new Error(error.message)
+  const { data: { publicUrl } } = supabase.storage.from('lembur-proofs').getPublicUrl(path)
+  return publicUrl
+}
+
 // ── Upload xlsx ───────────────────────────────────────
 export async function uploadXlsx(file: File, bulan: string, commit: boolean) {
   const { data } = await getSupabaseClient().auth.getSession()

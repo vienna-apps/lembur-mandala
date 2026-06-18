@@ -37,6 +37,7 @@ export interface LemburEvent {
   akhir_pekan: boolean
   wfo: boolean
   total_jam: number     // kompensasi result
+  bukti_url?: string | null
   created_at: string
 }
 

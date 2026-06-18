@@ -3,7 +3,8 @@ import { useState, useEffect, useRef } from 'react'
 import type { Profile, LemburEvent } from '@/lib/types'
 import { DEFAULT_PROJECTS, DEFAULT_SUGGESTIONS } from '@/lib/types'
 import { calcDuration, calcKompensasi } from '@/lib/calculations'
-import { createEvent, updateEvent, getSuggestions, saveSuggestion } from '@/lib/api'
+import { createEvent, updateEvent, getSuggestions, saveSuggestion, uploadProof } from '@/lib/api'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface Props {
   profile: Profile
@@ -23,6 +24,7 @@ function isWeekend(dateStr: string) {
 }
 
 export default function AddEventPanel({ profile, bulan, editingEvent, prefill, onClose, onSaved }: Props) {
+  const { session } = useAuth()
   const ev = editingEvent
   const pre = prefill ?? {}
   const today = new Date().toISOString().slice(0,10)
@@ -40,6 +42,9 @@ export default function AddEventPanel({ profile, bulan, editingEvent, prefill, o
   const [saving,     setSaving]     = useState(false)
   const [error,      setError]      = useState('')
   const [suggestions, setSuggestions] = useState<string[]>(DEFAULT_SUGGESTIONS)
+  const [proofFile,  setProofFile]  = useState<File | null>(null)
+  const [proofPreview, setProofPreview] = useState<string>(ev?.bukti_url ?? '')
+  const proofInputRef = useRef<HTMLInputElement>(null)
 
   const komp = calcKompensasi(durasi, standby, akhirPekan, wfo)
   const mult = (akhirPekan ? 2 : 1) * ((standby && !wfo) ? 0.5 : 1)
@@ -77,6 +82,11 @@ export default function AddEventPanel({ profile, bulan, editingEvent, prefill, o
     }
     setSaving(true); setError('')
     try {
+      let bukti_url: string | null | undefined = ev?.bukti_url ?? undefined
+      if (proofFile) {
+        const userId = session?.user?.id ?? profile.id
+        bukti_url = await uploadProof(proofFile, userId)
+      }
       const payload = {
         bulan,
         hari_tanggal: date,
@@ -89,6 +99,7 @@ export default function AddEventPanel({ profile, bulan, editingEvent, prefill, o
         akhir_pekan: akhirPekan,
         wfo,
         total_jam: komp,
+        ...(bukti_url !== undefined ? { bukti_url } : {}),
       }
       if (ev) await updateEvent(ev.id, payload)
       else     await createEvent(payload)
@@ -261,6 +272,43 @@ export default function AddEventPanel({ profile, bulan, editingEvent, prefill, o
               ))}
             </div>
             <div style={{ marginTop:9, fontSize:12, color:'var(--muted)' }}>Akhir pekan = ×2 · Standby = ×0.5 · Keduanya = ×1</div>
+          </div>
+
+          {/* Proof upload */}
+          <div style={{ marginBottom:22 }}>
+            <label className="field-label">Bukti Kegiatan <span className="field-hint">— foto, screenshot, atau PDF (opsional)</span></label>
+            <input
+              ref={proofInputRef}
+              type="file"
+              accept="image/*,.pdf"
+              style={{ display:'none' }}
+              onChange={e => {
+                const file = e.target.files?.[0] ?? null
+                setProofFile(file)
+                if (file) setProofPreview(URL.createObjectURL(file))
+              }}
+            />
+            {proofPreview ? (
+              <div style={{ marginBottom:10 }}>
+                {proofPreview.endsWith('.pdf') || (proofFile?.type === 'application/pdf') ? (
+                  <a href={proofPreview} target="_blank" rel="noreferrer"
+                    style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:8, border:'1px solid #ddd0c4', background:'#f5ede3', fontSize:12, color:'var(--brown)', textDecoration:'none' }}>
+                    📄 Lihat PDF Bukti
+                  </a>
+                ) : (
+                  <img src={proofPreview} alt="Preview bukti"
+                    style={{ maxWidth:'100%', maxHeight:200, borderRadius:8, border:'1px solid #ddd0c4', objectFit:'cover', display:'block', marginBottom:6 }} />
+                )}
+                <button onClick={() => { setProofFile(null); setProofPreview(''); if (proofInputRef.current) proofInputRef.current.value = '' }}
+                  style={{ fontSize:12, color:'var(--rose)', background:'none', border:'none', cursor:'pointer', fontFamily:'DM Sans,sans-serif', marginTop:4, textDecoration:'underline' }}>
+                  ✕ Hapus bukti
+                </button>
+              </div>
+            ) : null}
+            <button onClick={() => proofInputRef.current?.click()}
+              style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 16px', borderRadius:8, border:'1.5px dashed #ddd0c4', background:'#faf4ee', fontSize:13, color:'var(--brown)', cursor:'pointer', fontFamily:'DM Sans,sans-serif', width:'100%', justifyContent:'center' }}>
+              📎 {proofPreview ? 'Ganti Bukti' : 'Pilih File Bukti'}
+            </button>
           </div>
 
           {error && <div style={{ padding:'10px 14px', borderRadius:8, background:'rgba(196,122,114,.1)', border:'1px solid rgba(196,122,114,.35)', fontSize:13, color:'var(--rose)', marginBottom:8 }}>{error}</div>}
