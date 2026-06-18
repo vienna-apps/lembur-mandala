@@ -192,11 +192,11 @@ export async function GET(req: NextRequest) {
   const b2TitlePStart = xml.lastIndexOf('<w:p ', b2TitleIdx)
   const b2NameIdx = xml.indexOf('38DBD901', b2TitleIdx)
   const b2NamePEnd = xml.indexOf('</w:p>', b2NameIdx) + 6
-  const B2W = 5000
+  const B2COL = 2500  // each column width in twips
   const b2Table =
     `<w:tbl>` +
     `<w:tblPr>` +
-    `<w:tblW w:w="${B2W}" w:type="dxa"/>` +
+    `<w:tblW w:w="${B2COL * 2}" w:type="dxa"/>` +
     `<w:jc w:val="center"/>` +
     `<w:tblBorders>` +
     `<w:top w:val="single" w:sz="4" w:space="0" w:color="262626"/>` +
@@ -207,12 +207,14 @@ export async function GET(req: NextRequest) {
     `<w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto"/>` +
     `</w:tblBorders>` +
     `</w:tblPr>` +
-    `<w:tr><w:tc><w:tcPr><w:tcW w:w="${B2W}" w:type="dxa"/></w:tcPr>` +
+    `<w:tr>` +
+    `<w:tc><w:tcPr><w:tcW w:w="${B2COL}" w:type="dxa"/></w:tcPr>` +
     `<w:p>${SIG_PPR}${mvRun('Tech Lead')}</w:p>` +
-    `</w:tc></w:tr>` +
-    `<w:tr><w:tc><w:tcPr><w:tcW w:w="${B2W}" w:type="dxa"/></w:tcPr>` +
+    `</w:tc>` +
+    `<w:tc><w:tcPr><w:tcW w:w="${B2COL}" w:type="dxa"/></w:tcPr>` +
     `<w:p>${SIG_PPR}${mvRun('Vania Sanjaya')}</w:p>` +
-    `</w:tc></w:tr>` +
+    `</w:tc>` +
+    `</w:tr>` +
     `</w:tbl>`
   xml = xml.substring(0, b2TitlePStart) + b2Table + xml.substring(b2NamePEnd)
 
