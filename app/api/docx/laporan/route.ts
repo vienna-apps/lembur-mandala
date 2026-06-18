@@ -165,16 +165,36 @@ export async function GET(req: NextRequest) {
     `<w:p w14:paraId="55F83FB4" w14:textId="101DBECB" w:rsidR="00052797" w:rsidRDefault="0022747D" w:rsidP="006F0248">${KOTA_PPR}${mvRun(`Bandung, ${today}`)}</w:p>`,
   )
 
-  // ── 5. Signature names ─────────────────────────────────────────────────────
-  // "Nama Karyawan" placeholder (paraId 7A05C6D1) → Vania Sanjaya
+  // ── 5. Signature names (two identical blocks in the template) ────────────────
+  // Block 1: paraId 7A05C6D1 = "Nama Karyawan" → Vania Sanjaya
   xml = xml.replace(
     /<w:p [^>]*7A05C6D1[^>]*>[\s\S]*?<\/w:p>/,
     `<w:p w14:paraId="7A05C6D1" w14:textId="7DCCB779" w:rsidR="00052797" w:rsidRDefault="0022747D" w:rsidP="00052797">${SIG_PPR}${mvRun('Vania Sanjaya')}</w:p>`,
   )
-  // "Nama Direktur" placeholder (paraId 38486396) → Ginan Ginanjar Pratama
+  // Block 1: paraId 38486396 = "Nama Direktur" → Ginan Ginanjar Pratama
   xml = xml.replace(
     /<w:p [^>]*38486396[^>]*>[\s\S]*?<\/w:p>/,
     `<w:p w14:paraId="38486396" w14:textId="3C72DA5C" w:rsidR="00052797" w:rsidRDefault="0022747D" w:rsidP="00052797">${SIG_PPR}${mvRun('Ginan Ginanjar Pratama')}</w:p>`,
+  )
+  // Block 2: paraId 38DBD901 = "Nama Karyawan" → Vania Sanjaya
+  xml = xml.replace(
+    /<w:p [^>]*38DBD901[^>]*>[\s\S]*?<\/w:p>/,
+    `<w:p w14:paraId="38DBD901" w14:textId="316005FE" w:rsidR="00D54E13" w:rsidRDefault="0022747D" w:rsidP="00D54E13">${SIG_PPR}${mvRun('Vania Sanjaya')}</w:p>`,
+  )
+  // Block 1 – Vania title (paraId 4BCFDC35 = "Project Manager/Product Owner")
+  xml = xml.replace(
+    /<w:p [^>]*4BCFDC35[^>]*>[\s\S]*?<\/w:p>/,
+    `<w:p w14:paraId="4BCFDC35" w14:textId="3E1B3DD2" w:rsidR="00052797" w:rsidRDefault="0022747D" w:rsidP="00052797">${SIG_PPR}${mvRun('Tech Lead')}</w:p>`,
+  )
+  // Block 1 – Director title (paraId 16F02B55 = "Direktur Departemen")
+  xml = xml.replace(
+    /<w:p [^>]*16F02B55[^>]*>[\s\S]*?<\/w:p>/,
+    `<w:p w14:paraId="16F02B55" w14:textId="6A84DD7A" w:rsidR="00052797" w:rsidRDefault="00052797" w:rsidP="00052797">${SIG_PPR}${mvRun('Direktur')}</w:p>`,
+  )
+  // Block 2 – Vania title (paraId 740CD5B8 = "Project Manager/Product Owner")
+  xml = xml.replace(
+    /<w:p [^>]*740CD5B8[^>]*>[\s\S]*?<\/w:p>/,
+    `<w:p w14:paraId="740CD5B8" w14:textId="7C9907C7" w:rsidR="00D54E13" w:rsidRDefault="0022747D" w:rsidP="00D54E13">${SIG_PPR}${mvRun('Tech Lead')}</w:p>`,
   )
 
   zip.file('word/document.xml', xml)
