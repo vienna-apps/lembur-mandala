@@ -284,6 +284,11 @@ export default function AddEventPanel({ profile, bulan, editingEvent, prefill, o
               style={{ display:'none' }}
               onChange={e => {
                 const file = e.target.files?.[0] ?? null
+                if (file && file.size > 25 * 1024 * 1024) {
+                  alert('Ukuran file maksimal 25 MB.')
+                  e.target.value = ''
+                  return
+                }
                 setProofFile(file)
                 if (file) setProofPreview(URL.createObjectURL(file))
               }}
