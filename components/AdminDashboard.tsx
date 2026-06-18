@@ -21,6 +21,15 @@ function avatarColor(name: string) {
   return palette[Math.abs(h) % palette.length]
 }
 
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:.8, color:'var(--muted)', marginBottom:2 }}>{label}</div>
+      <div style={{ fontSize:12, color:'var(--cream)' }}>{value}</div>
+    </div>
+  )
+}
+
 // Build bulan list: current + past 6 months
 function buildBulanList(): string[] {
   const list: string[] = []
@@ -54,6 +63,8 @@ export default function AdminDashboard({ profile }: Props) {
   const [editingMyEvent, setEditingMyEvent] = useState<LemburEvent|null>(null)
   const [copyPrefill,    setCopyPrefill]    = useState<Partial<LemburEvent>|undefined>()
   const [showCopyPicker, setShowCopyPicker] = useState(false)
+  const [activeTab,      setActiveTab]      = useState<'submissions'|'events'>('submissions')
+  const [expandedEvent,  setExpandedEvent]  = useState<string|null>(null)
 
   const loadDeadlines = useCallback(async () => {
     const all = await getDeadlines()
@@ -253,8 +264,18 @@ export default function AdminDashboard({ profile }: Props) {
             ))}
           </div>
 
+          {/* Tab bar */}
+          <div style={{ display:'flex', borderBottom:'1px solid var(--border2)', padding:'0 16px' }}>
+            {(['submissions','events'] as const).map(tab => (
+              <button key={tab} onClick={() => setActiveTab(tab)}
+                style={{ padding:'10px 16px', background:'none', border:'none', borderBottom: activeTab===tab ? '2px solid var(--gold)' : '2px solid transparent', color: activeTab===tab ? 'var(--gold)' : 'var(--muted)', fontFamily:'DM Sans,sans-serif', fontSize:12, fontWeight:600, cursor:'pointer', textTransform:'uppercase', letterSpacing:.8, marginBottom:-1 }}>
+                {tab === 'submissions' ? 'Submissions' : 'Events'}
+              </button>
+            ))}
+          </div>
+
           {/* People list */}
-          {loading ? (
+          {activeTab === 'submissions' && (loading ? (
             <div style={{ padding:40, textAlign:'center', color:'var(--muted)', fontSize:13 }}>Memuat…</div>
           ) : (
             <div style={{ padding:12 }}>
@@ -305,7 +326,78 @@ export default function AdminDashboard({ profile }: Props) {
                 )
               })}
             </div>
-          )}
+          ))}
+
+          {/* Events tab */}
+          {activeTab === 'events' && (() => {
+            const allEvts = submissions.flatMap(s => (s.events ?? []).map(e => ({ ...e, profile: s.profile }))).sort((a,b) => a.hari_tanggal.localeCompare(b.hari_tanggal) || a.dari_jam.localeCompare(b.dari_jam))
+            // Group by project + date for peserta
+            const groupKey = (e: typeof allEvts[0]) => `${e.project}__${e.hari_tanggal}`
+            const pesertaMap = new Map<string, string[]>()
+            allEvts.forEach(e => {
+              const k = groupKey(e)
+              if (!pesertaMap.has(k)) pesertaMap.set(k, [])
+              if (!pesertaMap.get(k)!.includes(e.profile.nama)) pesertaMap.get(k)!.push(e.profile.nama)
+            })
+            return (
+              <div style={{ padding:12, display:'flex', flexDirection:'column', gap:4 }}>
+                {loading && <div style={{ padding:40, textAlign:'center', color:'var(--muted)', fontSize:13 }}>Memuat…</div>}
+                {!loading && allEvts.length === 0 && <div style={{ padding:40, textAlign:'center', color:'var(--muted)', fontSize:13 }}>Belum ada events bulan ini.</div>}
+                {!loading && allEvts.map(ev => {
+                  const key = `${ev.id}`
+                  const open = expandedEvent === key
+                  const peserta = pesertaMap.get(groupKey(ev)) ?? []
+                  return (
+                    <div key={ev.id} style={{ border:'1px solid var(--border)', borderRadius:'var(--r2)', overflow:'hidden' }}>
+                      <div onClick={() => setExpandedEvent(open ? null : key)}
+                        style={{ display:'grid', gridTemplateColumns:'90px 1fr auto auto', alignItems:'center', gap:10, padding:'10px 14px', cursor:'pointer', background: open ? 'rgba(200,153,78,.06)' : 'var(--bg3)' }}
+                        onMouseEnter={e => { if (!open) (e.currentTarget as HTMLElement).style.background='rgba(200,153,78,.04)' }}
+                        onMouseLeave={e => { if (!open) (e.currentTarget as HTMLElement).style.background='var(--bg3)' }}>
+                        <div style={{ fontSize:11, color:'var(--muted)', fontFamily:'monospace' }}>{ev.hari_tanggal}</div>
+                        <div>
+                          <div style={{ fontSize:12, fontWeight:600, color:'var(--cream)', display:'flex', alignItems:'center', gap:6 }}>
+                            <span style={{ fontSize:10, background:'var(--amberbg)', color:'var(--gold2)', padding:'1px 7px', borderRadius:10, fontFamily:'DM Sans,sans-serif', fontWeight:700 }}>{ev.project}</span>
+                            <span style={{ color:'var(--muted)', fontSize:11, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:260 }}>{ev.kegiatan.join('; ')}</span>
+                          </div>
+                          <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:3 }}>
+                            <span style={{ fontSize:11, color:'var(--muted)' }}>{ev.dari_jam}–{ev.sampai_jam}</span>
+                            <span style={{ fontSize:10, color:'var(--muted)' }}>·</span>
+                            {peserta.map(n => (
+                              <span key={n} style={{ fontSize:10, background:'rgba(200,153,78,.12)', color:'var(--gold)', border:'1px solid rgba(200,153,78,.2)', padding:'1px 7px', borderRadius:10 }}>{n.split(' ')[0]}</span>
+                            ))}
+                          </div>
+                        </div>
+                        <div style={{ fontFamily:'Cormorant Garamond,serif', fontSize:18, fontWeight:600, color:'var(--gold)', textAlign:'right', whiteSpace:'nowrap' }}>{ev.total_jam.toFixed(1)}j</div>
+                        <div style={{ color:'var(--muted)', fontSize:12 }}>{open ? '▲' : '▼'}</div>
+                      </div>
+                      {open && (
+                        <div style={{ padding:'12px 14px', borderTop:'1px solid var(--border2)', background:'var(--bg2)', display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px 24px', fontSize:12 }}>
+                          <Detail label="Nama" value={ev.profile.nama} />
+                          <Detail label="NIK" value={ev.profile.nik} />
+                          <Detail label="Kegiatan" value={ev.kegiatan.join('; ')} />
+                          <Detail label="Durasi" value={`${ev.durasi.toFixed(2)} jam`} />
+                          <Detail label="Jam Masuk" value={ev.dari_jam} />
+                          <Detail label="Jam Keluar" value={ev.sampai_jam} />
+                          <Detail label="WFO/WFH" value={ev.wfo ? 'WFO' : 'WFH'} />
+                          <Detail label="Standby" value={ev.standby ? 'Ya' : 'Tidak'} />
+                          <Detail label="Akhir Pekan" value={ev.akhir_pekan ? 'Ya' : 'Tidak'} />
+                          <Detail label="Total Kompensasi" value={`${ev.total_jam.toFixed(2)} jam`} />
+                          <div style={{ gridColumn:'1/-1', marginTop:4 }}>
+                            <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:1, color:'var(--gold)', marginBottom:6 }}>Peserta (project {ev.project} · {ev.hari_tanggal})</div>
+                            <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                              {peserta.map(n => (
+                                <span key={n} style={{ fontSize:11, background:'rgba(200,153,78,.12)', color:'var(--gold)', border:'1px solid rgba(200,153,78,.2)', padding:'3px 10px', borderRadius:12 }}>{n}</span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })()}
 
           {/* Lembur Saya */}
           {!loading && (
