@@ -53,6 +53,7 @@ export default function AdminDashboard({ profile }: Props) {
   const [showEventForm,  setShowEventForm]  = useState(false)
   const [editingMyEvent, setEditingMyEvent] = useState<LemburEvent|null>(null)
   const [copyPrefill,    setCopyPrefill]    = useState<Partial<LemburEvent>|undefined>()
+  const [showCopyPicker, setShowCopyPicker] = useState(false)
 
   const loadDeadlines = useCallback(async () => {
     const all = await getDeadlines()
@@ -318,6 +319,10 @@ export default function AdminDashboard({ profile }: Props) {
                   <span style={{ fontSize:11, color:'var(--muted)' }}>{myEvents.length} events · {myEvents.reduce((s,e)=>s+e.total_jam,0).toFixed(1)}j</span>
                 </div>
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                  <button onClick={e => { e.stopPropagation(); setShowCopyPicker(true); setMyPanelOpen(true) }}
+                    style={{ padding:'5px 12px', borderRadius:'var(--r2)', border:'1px solid var(--gold)', background:'transparent', color:'var(--gold)', fontFamily:'DM Sans,sans-serif', fontSize:11, fontWeight:500, cursor:'pointer' }}>
+                    ⧉ Salin Event
+                  </button>
                   <button onClick={e => { e.stopPropagation(); setCopyPrefill(undefined); setEditingMyEvent(null); setShowEventForm(true); setMyPanelOpen(true) }}
                     style={{ padding:'5px 12px', borderRadius:'var(--r2)', border:'1px solid var(--border)', background:'var(--bg3)', color:'var(--cream)', fontFamily:'DM Sans,sans-serif', fontSize:11, fontWeight:500, cursor:'pointer' }}>
                     ＋ Tambah Event
@@ -348,6 +353,58 @@ export default function AdminDashboard({ profile }: Props) {
           onClose={() => { setShowEventForm(false); setEditingMyEvent(null); setCopyPrefill(undefined) }}
           onSaved={() => { setShowEventForm(false); setEditingMyEvent(null); setCopyPrefill(undefined); loadMyEvents(activeBulan) }}
         />
+      )}
+
+      {showCopyPicker && (
+        <div
+          onClick={() => setShowCopyPicker(false)}
+          style={{ position:'fixed', inset:0, zIndex:200, background:'rgba(0,0,0,.6)', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:'var(--r1)', width:'100%', maxWidth:680, maxHeight:'80vh', display:'flex', flexDirection:'column', overflow:'hidden' }}>
+            <div style={{ padding:'16px 20px', borderBottom:'1px solid var(--border2)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+              <span style={{ fontFamily:'Cormorant Garamond,serif', fontSize:18, color:'var(--gold)', letterSpacing:.5 }}>Salin Event dari Submission Lain</span>
+              <button onClick={() => setShowCopyPicker(false)} style={{ background:'none', border:'none', color:'var(--muted)', fontSize:18, cursor:'pointer', lineHeight:1 }}>✕</button>
+            </div>
+            <div style={{ overflowY:'auto', padding:'12px 16px', display:'flex', flexDirection:'column', gap:16 }}>
+              {submissions.filter(s => s.profile.id !== profile.id && (s.events?.length ?? 0) > 0).length === 0 && (
+                <div style={{ color:'var(--muted)', textAlign:'center', padding:'32px 0', fontFamily:'DM Sans,sans-serif', fontSize:13 }}>Belum ada event dari orang lain bulan ini.</div>
+              )}
+              {submissions.filter(s => s.profile.id !== profile.id && (s.events?.length ?? 0) > 0).map(s => (
+                <div key={s.profile.id}>
+                  <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:1.2, color:'var(--gold)', marginBottom:6 }}>
+                    {s.profile.nama}
+                  </div>
+                  <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
+                    {(s.events ?? []).map(ev => (
+                      <div key={ev.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 10px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:'var(--r2)' }}>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ fontSize:12, color:'var(--cream)', fontFamily:'DM Sans,sans-serif', fontWeight:500, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                            {ev.kegiatan.join('; ')}
+                          </div>
+                          <div style={{ fontSize:11, color:'var(--muted)', marginTop:2 }}>
+                            {ev.hari_tanggal} · {ev.dari_jam}–{ev.sampai_jam} · {ev.project}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const { id: _id, user_id: _uid, month_id: _mid, created_at: _ca, ...rest } = ev
+                            setCopyPrefill(rest)
+                            setEditingMyEvent(null)
+                            setShowCopyPicker(false)
+                            setShowEventForm(true)
+                          }}
+                          style={{ padding:'4px 12px', borderRadius:'var(--r2)', border:'1px solid var(--gold)', background:'transparent', color:'var(--gold)', fontFamily:'DM Sans,sans-serif', fontSize:11, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                          Salin →
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
