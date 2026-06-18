@@ -206,7 +206,7 @@ export async function GET(req: NextRequest) {
   }
 
   const zipBuf = outerZip.generate({ type: 'nodebuffer' })
-  return new Response(zipBuf, {
+  return new Response(new Uint8Array(zipBuf), {
     headers: {
       'Content-Type': 'application/zip',
       'Content-Disposition': `attachment; filename="MoO-Mandala-${bulan}.zip"`,
