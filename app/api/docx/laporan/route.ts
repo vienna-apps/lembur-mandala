@@ -176,11 +176,6 @@ export async function GET(req: NextRequest) {
     /<w:p [^>]*38486396[^>]*>[\s\S]*?<\/w:p>/,
     `<w:p w14:paraId="38486396" w14:textId="3C72DA5C" w:rsidR="00052797" w:rsidRDefault="0022747D" w:rsidP="00052797">${SIG_PPR}${mvRun('Ginan Ginanjar Pratama')}</w:p>`,
   )
-  // Block 2: paraId 38DBD901 = "Nama Karyawan" → Vania Sanjaya
-  xml = xml.replace(
-    /<w:p [^>]*38DBD901[^>]*>[\s\S]*?<\/w:p>/,
-    `<w:p w14:paraId="38DBD901" w14:textId="316005FE" w:rsidR="00D54E13" w:rsidRDefault="0022747D" w:rsidP="00D54E13">${SIG_PPR}${mvRun('Vania Sanjaya')}</w:p>`,
-  )
   // Block 1 – Vania title (paraId 4BCFDC35 = "Project Manager/Product Owner")
   xml = xml.replace(
     /<w:p [^>]*4BCFDC35[^>]*>[\s\S]*?<\/w:p>/,
@@ -191,11 +186,35 @@ export async function GET(req: NextRequest) {
     /<w:p [^>]*16F02B55[^>]*>[\s\S]*?<\/w:p>/,
     `<w:p w14:paraId="16F02B55" w14:textId="6A84DD7A" w:rsidR="00052797" w:rsidRDefault="00052797" w:rsidP="00052797">${SIG_PPR}${mvRun('Direktur')}</w:p>`,
   )
-  // Block 2 – Vania title (paraId 740CD5B8 = "Project Manager/Product Owner")
-  xml = xml.replace(
-    /<w:p [^>]*740CD5B8[^>]*>[\s\S]*?<\/w:p>/,
-    `<w:p w14:paraId="740CD5B8" w14:textId="7C9907C7" w:rsidR="00D54E13" w:rsidRDefault="0022747D" w:rsidP="00D54E13">${SIG_PPR}${mvRun('Tech Lead')}</w:p>`,
-  )
+
+  // ── 6. Block 2: wrap title + name in a table with outer border ────────────────
+  const b2TitleIdx = xml.indexOf('740CD5B8')
+  const b2TitlePStart = xml.lastIndexOf('<w:p ', b2TitleIdx)
+  const b2NameIdx = xml.indexOf('38DBD901', b2TitleIdx)
+  const b2NamePEnd = xml.indexOf('</w:p>', b2NameIdx) + 6
+  const B2W = 5000
+  const b2Table =
+    `<w:tbl>` +
+    `<w:tblPr>` +
+    `<w:tblW w:w="${B2W}" w:type="dxa"/>` +
+    `<w:jc w:val="center"/>` +
+    `<w:tblBorders>` +
+    `<w:top w:val="single" w:sz="4" w:space="0" w:color="262626"/>` +
+    `<w:left w:val="single" w:sz="4" w:space="0" w:color="262626"/>` +
+    `<w:bottom w:val="single" w:sz="4" w:space="0" w:color="262626"/>` +
+    `<w:right w:val="single" w:sz="4" w:space="0" w:color="262626"/>` +
+    `<w:insideH w:val="none" w:sz="0" w:space="0" w:color="auto"/>` +
+    `<w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto"/>` +
+    `</w:tblBorders>` +
+    `</w:tblPr>` +
+    `<w:tr><w:tc><w:tcPr><w:tcW w:w="${B2W}" w:type="dxa"/></w:tcPr>` +
+    `<w:p>${SIG_PPR}${mvRun('Tech Lead')}</w:p>` +
+    `</w:tc></w:tr>` +
+    `<w:tr><w:tc><w:tcPr><w:tcW w:w="${B2W}" w:type="dxa"/></w:tcPr>` +
+    `<w:p>${SIG_PPR}${mvRun('Vania Sanjaya')}</w:p>` +
+    `</w:tc></w:tr>` +
+    `</w:tbl>`
+  xml = xml.substring(0, b2TitlePStart) + b2Table + xml.substring(b2NamePEnd)
 
   zip.file('word/document.xml', xml)
   const buf = zip.generate({ type: 'nodebuffer' })
