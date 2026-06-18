@@ -158,10 +158,23 @@ export async function GET(req: NextRequest) {
   xml = xml.substring(0, detHeaderEnd) + detRows + '</w:tbl>' + xml.substring(detTblEnd)
 
   // ── 4. Kota date paragraph (paraId 55F83FB4) ──────────────────────────────
+  const SIG_PPR = '<w:pPr><w:spacing w:line="360" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr></w:pPr>'
   const KOTA_PPR = '<w:pPr><w:spacing w:line="360" w:lineRule="auto"/><w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr></w:pPr>'
   xml = xml.replace(
     /<w:p [^>]*55F83FB4[^>]*>[\s\S]*?<\/w:p>/,
     `<w:p w14:paraId="55F83FB4" w14:textId="101DBECB" w:rsidR="00052797" w:rsidRDefault="0022747D" w:rsidP="006F0248">${KOTA_PPR}${mvRun(`Bandung, ${today}`)}</w:p>`,
+  )
+
+  // ── 5. Signature names ─────────────────────────────────────────────────────
+  // "Nama Karyawan" placeholder (paraId 7A05C6D1) → Vania Sanjaya
+  xml = xml.replace(
+    /<w:p [^>]*7A05C6D1[^>]*>[\s\S]*?<\/w:p>/,
+    `<w:p w14:paraId="7A05C6D1" w14:textId="7DCCB779" w:rsidR="00052797" w:rsidRDefault="0022747D" w:rsidP="00052797">${SIG_PPR}${mvRun('Vania Sanjaya')}</w:p>`,
+  )
+  // "Nama Direktur" placeholder (paraId 38486396) → Ginan Ginanjar Pratama
+  xml = xml.replace(
+    /<w:p [^>]*38486396[^>]*>[\s\S]*?<\/w:p>/,
+    `<w:p w14:paraId="38486396" w14:textId="3C72DA5C" w:rsidR="00052797" w:rsidRDefault="0022747D" w:rsidP="00052797">${SIG_PPR}${mvRun('Ginan Ginanjar Pratama')}</w:p>`,
   )
 
   zip.file('word/document.xml', xml)
