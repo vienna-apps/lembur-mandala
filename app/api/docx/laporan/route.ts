@@ -34,8 +34,9 @@ function dataRun(text: string): string {
 
 // Summary table column widths
 const SUM_WIDTHS = [3237, 3237, 3238, 3238]
-// Detail table column widths
-const DET_WIDTHS = [2258, 4263, 1344, 708, 922, 779, 1492, 1180]
+// Detail table: 10 columns matching real laporan
+const DET_WIDTHS = [1842, 3444, 2211, 1020, 1027, 962, 1075, 1400, 795, 1105]
+const DET_HEADERS = ['Nama Karyawan', 'Kegiatan', 'Tanggal', 'Standby', 'Dari Jam', 'Sampai Jam', 'Selama (Jam)', 'Akhir Pekan / Tanggal Merah', 'WFO', 'Total (Jam)']
 
 const PPR_360 = '<w:pPr><w:spacing w:line="360" w:lineRule="auto"/></w:pPr>'
 
@@ -49,6 +50,21 @@ function summaryRow(cells: string[]): string {
   return `<w:tr><w:trPr><w:cnfStyle w:val="000000100000" w:firstRow="0" w:lastRow="0" w:firstColumn="0" w:lastColumn="0" w:oddVBand="0" w:evenVBand="0" w:oddHBand="1" w:evenHBand="0" w:firstRowFirstColumn="0" w:firstRowLastColumn="0" w:lastRowFirstColumn="0" w:lastRowLastColumn="0"/></w:trPr>${tcCells}</w:tr>`
 }
 
+function detHeaderCell(text: string, w: number): string {
+  return (
+    `<w:tc>` +
+    `<w:tcPr>` +
+    `<w:cnfStyle w:val="001000000000" w:firstRow="0" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:oddVBand="0" w:evenVBand="0" w:oddHBand="0" w:evenHBand="0" w:firstRowFirstColumn="0" w:firstRowLastColumn="0" w:lastRowFirstColumn="0" w:lastRowLastColumn="0"/>` +
+    `<w:tcW w:w="${w}" w:type="dxa"/>` +
+    `<w:shd w:val="clear" w:color="auto" w:fill="63A4F7"/>` +
+    `<w:vAlign w:val="center"/>` +
+    `</w:tcPr>` +
+    `<w:p><w:pPr><w:jc w:val="center"/></w:pPr>` +
+    `<w:r><w:rPr><w:sz w:val="16"/></w:rPr><w:t>${escapeXml(text)}</w:t></w:r>` +
+    `</w:p></w:tc>`
+  )
+}
+
 function detailRow(cells: string[]): string {
   const tcCells = cells.map((text, i) => (
     `<w:tc>` +
@@ -59,19 +75,48 @@ function detailRow(cells: string[]): string {
   return `<w:tr><w:trPr><w:cnfStyle w:val="000000100000" w:firstRow="0" w:lastRow="0" w:firstColumn="0" w:lastColumn="0" w:oddVBand="0" w:evenVBand="0" w:oddHBand="1" w:evenHBand="0" w:firstRowFirstColumn="0" w:firstRowLastColumn="0" w:lastRowFirstColumn="0" w:lastRowLastColumn="0"/></w:trPr>${tcCells}</w:tr>`
 }
 
+// Signing table: 2-col, right-aligned bold-name/title in col 0, empty col 1
+const SIG_RPRM_BOLD = '<w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:b/><w:bCs/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr>'
+const SIG_PPR_RIGHT = '<w:pPr><w:snapToGrid w:val="0"/><w:jc w:val="right"/><w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr></w:pPr>'
+const SIG_TBL_PR = '<w:tblPr><w:tblStyle w:val="TableGridLight"/><w:tblW w:w="0" w:type="auto"/><w:tblInd w:w="2160" w:type="dxa"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr>'
+const SIG_TC_BORDERS = '<w:tcBorders><w:top w:val="nil"/><w:left w:val="nil"/></w:tcBorders>'
+
+function sigTableRow(name: string, title: string, col0w: number, col1w: number): string {
+  return (
+    `<w:tr>` +
+    `<w:tc><w:tcPr><w:tcW w:w="${col0w}" w:type="dxa"/>${SIG_TC_BORDERS}<w:vAlign w:val="center"/></w:tcPr>` +
+    `<w:p>${SIG_PPR_RIGHT}` +
+    `<w:r>${SIG_RPRM_BOLD}<w:t>${escapeXml(name)}</w:t></w:r>` +
+    `<w:r>${RPRM}<w:t>/${escapeXml(title)}</w:t></w:r>` +
+    `</w:p></w:tc>` +
+    `<w:tc><w:tcPr><w:tcW w:w="${col1w}" w:type="dxa"/>${SIG_TC_BORDERS}<w:vAlign w:val="center"/></w:tcPr>` +
+    `<w:p><w:pPr><w:jc w:val="center"/></w:pPr></w:p>` +
+    `</w:tc>` +
+    `</w:tr>`
+  )
+}
+
 // Inject a text run into an empty paragraph cell identified by paraId
 function injectIntoEmptyPara(xml: string, paraId: string, text: string): string {
-  // Empty para has: <w:p ...><w:pPr>...</w:pPr></w:p>
-  // We replace the closing </w:pPr></w:p> with </w:pPr><w:r>...<w:t>text</w:t></w:r></w:p>
   const idx = xml.indexOf(`paraId="${paraId}"`)
   if (idx < 0) return xml
   const pStart = xml.lastIndexOf('<w:p ', idx)
   const pEnd = xml.indexOf('</w:p>', pStart) + 6
   const para = xml.substring(pStart, pEnd)
-  // Find end of pPr
   const pprEnd = para.indexOf('</w:pPr>') + 8
   const newPara = para.substring(0, pprEnd) + mvRun(text) + para.substring(pprEnd, para.length - 6) + '</w:p>'
   return xml.substring(0, pStart) + newPara + xml.substring(pEnd)
+}
+
+// Replace paragraph block (from first paraId to last paraId inclusive) with new content
+function replaceParaBlock(xml: string, firstId: string, lastId: string, replacement: string): string {
+  const startIdx = xml.indexOf(firstId)
+  if (startIdx < 0) return xml
+  const pStart = xml.lastIndexOf('<w:p ', startIdx)
+  const endIdx = xml.indexOf(lastId, startIdx)
+  if (endIdx < 0) return xml
+  const pEnd = xml.indexOf('</w:p>', endIdx) + 6
+  return xml.substring(0, pStart) + replacement + xml.substring(pEnd)
 }
 
 // GET /api/docx/laporan?bulan=2026-06
@@ -114,13 +159,10 @@ export async function GET(req: NextRequest) {
   let xml = zip.file('word/document.xml')!.asText()
 
   // ── 1. Info table value cells (paraIds from template) ─────────────────────
-  // Row 0: Nama project → "MANDALA"
   xml = injectIntoEmptyPara(xml, '3877C8AA', 'MANDALA')
-  // Row 1: Periode/bulan → bulanLbl
   xml = injectIntoEmptyPara(xml, '6495C9E2', bulanLbl)
 
   // ── 2. Summary table rows ──────────────────────────────────────────────────
-  // Table 0 = info, Table 1 = summary
   const infoTblEnd = xml.indexOf('</w:tbl>') + 8
   const sumTblStart = xml.indexOf('<w:tbl>', infoTblEnd)
   const sumTblEnd = xml.indexOf('</w:tbl>', sumTblStart) + 8
@@ -135,69 +177,70 @@ export async function GET(req: NextRequest) {
 
   xml = xml.substring(0, sumHeaderEnd) + sumRows + '</w:tbl>' + xml.substring(sumTblEnd)
 
-  // ── 3. Detail table rows ───────────────────────────────────────────────────
-  // After injection of summary rows, recompute table positions
+  // ── 3. Detail table — replace entirely with 10-column version ─────────────
   const newSumTblEnd = xml.indexOf('</w:tbl>', infoTblEnd) + 8
   const detTblStart = xml.indexOf('<w:tbl>', newSumTblEnd)
   const detTblEnd = xml.indexOf('</w:tbl>', detTblStart) + 8
-  const detHeaderEnd = xml.indexOf('</w:tr>', detTblStart) + 7
 
-  const detRows = summary.flatMap(p =>
+  const detTblW = DET_WIDTHS.reduce((s, w) => s + w, 0)
+  const detHeaderRow = (
+    `<w:tr>` +
+    DET_HEADERS.map((h, i) => detHeaderCell(h, DET_WIDTHS[i])).join('') +
+    `</w:tr>`
+  )
+  const detDataRows = summary.flatMap(p =>
     p.events.map((e, i) => detailRow([
       i === 0 ? p.profile.nama : '',
       e.kegiatan.join('; '),
       fmtDate(e.hari_tanggal),
+      e.standby ? 'Ya' : 'Tidak',
       e.dari_jam,
       e.sampai_jam,
       e.durasi.toFixed(2),
       e.akhir_pekan ? 'Ya' : 'Tidak',
+      e.wfo ? 'WFO' : 'WFH',
       e.total_jam.toFixed(2),
     ]))
   ).join('')
 
-  xml = xml.substring(0, detHeaderEnd) + detRows + '</w:tbl>' + xml.substring(detTblEnd)
+  const newDetTbl = (
+    `<w:tbl>` +
+    `<w:tblPr>` +
+    `<w:tblStyle w:val="ListTable2-Accent1"/>` +
+    `<w:tblW w:w="${detTblW}" w:type="dxa"/>` +
+    `<w:tblLook w:val="0480" w:firstRow="0" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/>` +
+    `</w:tblPr>` +
+    detHeaderRow + detDataRows +
+    `</w:tbl>`
+  )
+
+  xml = xml.substring(0, detTblStart) + newDetTbl + xml.substring(detTblEnd)
 
   // ── 4. Kota date paragraph (paraId 55F83FB4) ──────────────────────────────
-  const SIG_PPR = '<w:pPr><w:spacing w:line="360" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr></w:pPr>'
   const KOTA_PPR = '<w:pPr><w:spacing w:line="360" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr></w:pPr>'
   xml = xml.replace(
     /<w:p [^>]*55F83FB4[^>]*>[\s\S]*?<\/w:p>/,
     `<w:p w14:paraId="55F83FB4" w14:textId="101DBECB" w:rsidR="00052797" w:rsidRDefault="0022747D" w:rsidP="006F0248">${KOTA_PPR}${mvRun(`Bandung, ${today}`)}</w:p>`,
   )
 
-  // ── 5. Signature names (two identical blocks in the template) ────────────────
-  // Block 1: paraId 7A05C6D1 = "Nama Karyawan" → Vania Sanjaya
-  xml = xml.replace(
-    /<w:p [^>]*7A05C6D1[^>]*>[\s\S]*?<\/w:p>/,
-    `<w:p w14:paraId="7A05C6D1" w14:textId="7DCCB779" w:rsidR="00052797" w:rsidRDefault="0022747D" w:rsidP="00052797">${SIG_PPR}${mvRun('Vania Sanjaya')}</w:p>`,
+  // ── 5. Block 1 signing — replace paragraph block with 2-col table ──────────
+  // Range: 4BCFDC35 (first title) → 38486396 (director name)
+  const sigTable1 = (
+    `<w:tbl>${SIG_TBL_PR}` +
+    sigTableRow('Vania Sanjaya', 'Tech Lead', 4616, 2944) +
+    sigTableRow('Ginan Ginanjar Pratama', 'Direktur', 4616, 2944) +
+    `</w:tbl>`
   )
-  // Block 1: paraId 38486396 = "Nama Direktur" → Ginan Ginanjar Pratama
-  xml = xml.replace(
-    /<w:p [^>]*38486396[^>]*>[\s\S]*?<\/w:p>/,
-    `<w:p w14:paraId="38486396" w14:textId="3C72DA5C" w:rsidR="00052797" w:rsidRDefault="0022747D" w:rsidP="00052797">${SIG_PPR}${mvRun('Ginan Ginanjar Pratama')}</w:p>`,
-  )
-  // Block 1 – Vania title (paraId 4BCFDC35 = "Project Manager/Product Owner")
-  xml = xml.replace(
-    /<w:p [^>]*4BCFDC35[^>]*>[\s\S]*?<\/w:p>/,
-    `<w:p w14:paraId="4BCFDC35" w14:textId="3E1B3DD2" w:rsidR="00052797" w:rsidRDefault="0022747D" w:rsidP="00052797">${SIG_PPR}${mvRun('Tech Lead')}</w:p>`,
-  )
-  // Block 1 – Director title (paraId 16F02B55 = "Direktur Departemen")
-  xml = xml.replace(
-    /<w:p [^>]*16F02B55[^>]*>[\s\S]*?<\/w:p>/,
-    `<w:p w14:paraId="16F02B55" w14:textId="6A84DD7A" w:rsidR="00052797" w:rsidRDefault="00052797" w:rsidP="00052797">${SIG_PPR}${mvRun('Direktur')}</w:p>`,
-  )
+  xml = replaceParaBlock(xml, '4BCFDC35', '38486396', sigTable1)
 
-  // ── 6. Block 2: second signing section after detail table ────────────────────
-  // 740CD5B8 = "Project Manager/Product Owner" → Tech Lead
-  xml = xml.replace(
-    /<w:p [^>]*740CD5B8[^>]*>[\s\S]*?<\/w:p>/,
-    `<w:p w14:paraId="740CD5B8" w14:textId="7C9907C7" w:rsidR="00D54E13" w:rsidRDefault="0022747D" w:rsidP="00D54E13">${SIG_PPR}${mvRun('Tech Lead')}</w:p>`,
+  // ── 6. Block 2 signing — replace paragraph block after detail table ─────────
+  // Range: 740CD5B8 (title) → 38DBD901 (name)
+  const sigTable2 = (
+    `<w:tbl>${SIG_TBL_PR}` +
+    sigTableRow('Vania Sanjaya', 'Tech Lead', 4678, 4232) +
+    `</w:tbl>`
   )
-  // 38DBD901 = "Nama Karyawan" → Vania Sanjaya
-  xml = xml.replace(
-    /<w:p [^>]*38DBD901[^>]*>[\s\S]*?<\/w:p>/,
-    `<w:p w14:paraId="38DBD901" w14:textId="5A6FB123" w:rsidR="00D54E13" w:rsidRDefault="0022747D" w:rsidP="00D54E13">${SIG_PPR}${mvRun('Vania Sanjaya')}</w:p>`,
-  )
+  xml = replaceParaBlock(xml, '740CD5B8', '38DBD901', sigTable2)
 
   zip.file('word/document.xml', xml)
   const buf = zip.generate({ type: 'nodebuffer' })
