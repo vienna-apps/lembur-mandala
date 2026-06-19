@@ -162,6 +162,7 @@ export default function AdminDashboard({ profile }: Props) {
             <div style={{ display:'flex', alignItems:'center', gap:8, background:'linear-gradient(135deg,rgba(126,31,44,.3),rgba(168,44,58,.15))', border:'1px solid rgba(168,44,58,.4)', borderRadius:20, padding:'6px 14px', fontSize:12, color:'var(--rose)', fontWeight:600 }}>
               👑 {profile.nama} · Tech Lead
             </div>
+            <button onClick={() => router.push('/dashboard')} className="btn-ghost" style={{ fontSize:12 }}>My Submission</button>
             <button onClick={async () => { await signOut(); router.push('/login') }} className="btn-ghost">Logout</button>
           </div>
         </div>

@@ -140,6 +140,12 @@ export default function EmployeeDashboard({ profile }: Props) {
               style={{ padding:'5px 8px', borderRadius:20, border:'1px solid var(--border)', background:'transparent', color:'var(--muted)', fontSize:14, cursor:'pointer', fontFamily:'DM Sans,sans-serif', marginLeft:4 }}>
               ⚙
             </button>
+            {profile.is_admin && (
+              <button onClick={() => router.push('/admin')}
+                style={{ padding:'5px 10px', borderRadius:20, border:'1px solid var(--border)', background:'transparent', color:'var(--gold)', fontSize:12, cursor:'pointer', fontFamily:'DM Sans,sans-serif', marginLeft:2 }}>
+                Admin
+              </button>
+            )}
             <button onClick={async () => { await signOut(); router.push('/login') }}
               style={{ padding:'5px 10px', borderRadius:20, border:'1px solid var(--border)', background:'transparent', color:'var(--muted)', fontSize:12, cursor:'pointer', fontFamily:'DM Sans,sans-serif', marginLeft:2 }}>
               Logout

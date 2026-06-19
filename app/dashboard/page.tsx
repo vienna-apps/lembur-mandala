@@ -11,8 +11,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (loading) return
     if (!session) router.replace('/login')
-    else if (profile?.is_admin) router.replace('/admin')
-  }, [loading, session, profile, router])
+  }, [loading, session, router])
 
   if (loading || !profile) return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
