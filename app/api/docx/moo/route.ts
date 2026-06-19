@@ -87,6 +87,8 @@ export async function GET(req: NextRequest) {
 
   if (!months?.length) return NextResponse.json({ error: 'Tidak ada data.' }, { status: 404 })
 
+  try {
+
   const allEvents: Array<LemburEvent & { profile: Profile }> = []
   for (const m of months) {
     for (const ev of (m.events ?? [])) allEvents.push({ ...ev, profile: m.profile })
@@ -212,4 +214,10 @@ export async function GET(req: NextRequest) {
       'Content-Disposition': `attachment; filename="MoO-Mandala-${bulan}.zip"`,
     },
   })
+
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[moo]', msg)
+    return NextResponse.json({ error: msg }, { status: 500 })
+  }
 }

@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  outputFileTracingIncludes: {
+    '/api/docx/moo': ['./templates/**'],
+    '/api/docx/laporan': ['./templates/**'],
+  },
 };
 
 export default nextConfig;
