@@ -330,78 +330,84 @@ export default function AdminDashboard({ profile }: Props) {
 
           {/* Events tab */}
           {activeTab === 'events' && (() => {
-            const allEvts = submissions.flatMap(s => (s.events ?? []).map(e => ({ ...e, profile: s.profile }))).sort((a,b) => a.hari_tanggal.localeCompare(b.hari_tanggal) || a.dari_jam.localeCompare(b.dari_jam))
-            // Group by project + date for peserta
-            const groupKey = (e: typeof allEvts[0]) => `${e.project}__${e.hari_tanggal}`
-            const pesertaMap = new Map<string, string[]>()
+            type EvWithProfile = LemburEvent & { profile: Profile }
+            const allEvts: EvWithProfile[] = submissions.flatMap(s => (s.events ?? []).map(e => ({ ...e, profile: s.profile }))).sort((a,b) => a.hari_tanggal.localeCompare(b.hari_tanggal) || a.dari_jam.localeCompare(b.dari_jam))
+            // Group by date + project into merged rows
+            const groupMap = new Map<string, EvWithProfile[]>()
             allEvts.forEach(e => {
-              const k = groupKey(e)
-              if (!pesertaMap.has(k)) pesertaMap.set(k, [])
-              if (!pesertaMap.get(k)!.includes(e.profile.nama)) pesertaMap.get(k)!.push(e.profile.nama)
+              const k = `${e.hari_tanggal}__${e.project}`
+              if (!groupMap.has(k)) groupMap.set(k, [])
+              groupMap.get(k)!.push(e)
             })
+            const groups = Array.from(groupMap.entries()).map(([k, evs]) => ({
+              key: k,
+              hari_tanggal: evs[0].hari_tanggal,
+              project: evs[0].project,
+              evs,
+              peserta: [...new Set(evs.map(e => e.profile.nama))],
+              kegiatan: [...new Set(evs.flatMap(e => e.kegiatan))],
+              dari_jam: [...evs.map(e => e.dari_jam)].sort()[0],
+              sampai_jam: [...evs.map(e => e.sampai_jam)].sort().reverse()[0],
+            }))
             return (
               <div style={{ padding:12, display:'flex', flexDirection:'column', gap:4 }}>
                 {loading && <div style={{ padding:40, textAlign:'center', color:'var(--muted)', fontSize:13 }}>Memuat…</div>}
-                {!loading && allEvts.length === 0 && <div style={{ padding:40, textAlign:'center', color:'var(--muted)', fontSize:13 }}>Belum ada events bulan ini.</div>}
-                {!loading && allEvts.map(ev => {
-                  const key = `${ev.id}`
-                  const open = expandedEvent === key
-                  const peserta = pesertaMap.get(groupKey(ev)) ?? []
+                {!loading && groups.length === 0 && <div style={{ padding:40, textAlign:'center', color:'var(--muted)', fontSize:13 }}>Belum ada events bulan ini.</div>}
+                {!loading && groups.map(g => {
+                  const open = expandedEvent === g.key
                   return (
-                    <div key={ev.id} style={{ border:'1px solid var(--border)', borderRadius:'var(--r2)', overflow:'hidden' }}>
-                      <div onClick={() => setExpandedEvent(open ? null : key)}
+                    <div key={g.key} style={{ border:'1px solid var(--border)', borderRadius:'var(--r2)', overflow:'hidden' }}>
+                      <div onClick={() => setExpandedEvent(open ? null : g.key)}
                         style={{ display:'grid', gridTemplateColumns:'90px 1fr auto auto', alignItems:'center', gap:10, padding:'10px 14px', cursor:'pointer', background: open ? 'rgba(200,153,78,.06)' : 'var(--bg3)' }}
                         onMouseEnter={e => { if (!open) (e.currentTarget as HTMLElement).style.background='rgba(200,153,78,.04)' }}
                         onMouseLeave={e => { if (!open) (e.currentTarget as HTMLElement).style.background='var(--bg3)' }}>
-                        <div style={{ fontSize:11, color:'var(--muted)', fontFamily:'monospace' }}>{ev.hari_tanggal}</div>
+                        <div style={{ fontSize:11, color:'var(--muted)', fontFamily:'monospace' }}>{g.hari_tanggal}</div>
                         <div>
                           <div style={{ fontSize:12, fontWeight:600, color:'var(--cream)', display:'flex', alignItems:'center', gap:6 }}>
-                            <span style={{ fontSize:10, background:'var(--amberbg)', color:'var(--gold2)', padding:'1px 7px', borderRadius:10, fontFamily:'DM Sans,sans-serif', fontWeight:700 }}>{ev.project}</span>
-                            <span style={{ color:'var(--muted)', fontSize:11, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:260 }}>{ev.kegiatan.join('; ')}</span>
+                            <span style={{ fontSize:10, background:'var(--amberbg)', color:'var(--gold2)', padding:'1px 7px', borderRadius:10, fontFamily:'DM Sans,sans-serif', fontWeight:700 }}>{g.project}</span>
+                            <span style={{ color:'var(--muted)', fontSize:11, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:240 }}>{g.kegiatan.join('; ')}</span>
                           </div>
                           <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:3 }}>
-                            <span style={{ fontSize:11, color:'var(--muted)' }}>{ev.dari_jam}–{ev.sampai_jam}</span>
+                            <span style={{ fontSize:11, color:'var(--muted)' }}>{g.dari_jam}–{g.sampai_jam}</span>
                             <span style={{ fontSize:10, color:'var(--muted)' }}>·</span>
-                            {peserta.map(n => (
+                            {g.peserta.map(n => (
                               <span key={n} style={{ fontSize:10, background:'rgba(200,153,78,.12)', color:'var(--gold)', border:'1px solid rgba(200,153,78,.2)', padding:'1px 7px', borderRadius:10 }}>{n.split(' ')[0]}</span>
                             ))}
                           </div>
                         </div>
-                        <div style={{ fontFamily:'Cormorant Garamond,serif', fontSize:18, fontWeight:600, color:'var(--gold)', textAlign:'right', whiteSpace:'nowrap' }}>{ev.total_jam.toFixed(1)}j</div>
+                        <div style={{ fontSize:11, color:'var(--muted)', textAlign:'right', whiteSpace:'nowrap' }}>{g.evs.length} orang</div>
                         <div style={{ color:'var(--muted)', fontSize:12 }}>{open ? '▲' : '▼'}</div>
                       </div>
                       {open && (
-                        <div style={{ padding:'12px 14px', borderTop:'1px solid var(--border2)', background:'var(--bg2)', display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px 24px', fontSize:12 }}>
-                          <Detail label="Nama" value={ev.profile.nama} />
-                          <Detail label="NIK" value={ev.profile.nik} />
-                          <Detail label="Kegiatan" value={ev.kegiatan.join('; ')} />
-                          <Detail label="Durasi" value={`${ev.durasi.toFixed(2)} jam`} />
-                          <Detail label="Jam Masuk" value={ev.dari_jam} />
-                          <Detail label="Jam Keluar" value={ev.sampai_jam} />
-                          <Detail label="WFO/WFH" value={ev.wfo ? 'WFO' : 'WFH'} />
-                          <Detail label="Standby" value={ev.standby ? 'Ya' : 'Tidak'} />
-                          <Detail label="Akhir Pekan" value={ev.akhir_pekan ? 'Ya' : 'Tidak'} />
-                          <Detail label="Total Kompensasi" value={`${ev.total_jam.toFixed(2)} jam`} />
-                          <div style={{ gridColumn:'1/-1', marginTop:4 }}>
-                            <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:1, color:'var(--gold)', marginBottom:6 }}>Peserta (project {ev.project} · {ev.hari_tanggal})</div>
-                            <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-                              {peserta.map(n => (
-                                <span key={n} style={{ fontSize:11, background:'rgba(200,153,78,.12)', color:'var(--gold)', border:'1px solid rgba(200,153,78,.2)', padding:'3px 10px', borderRadius:12 }}>{n}</span>
-                              ))}
-                            </div>
-                          </div>
-                          {ev.bukti_urls && ev.bukti_urls.length > 0 && (
-                            <div style={{ gridColumn:'1/-1', marginTop:4, paddingTop:10, borderTop:'1px solid var(--border2)' }}>
-                              <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:1, color:'var(--gold)', marginBottom:8 }}>Bukti Kegiatan ({ev.bukti_urls.length})</div>
-                              <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-                                {ev.bukti_urls.map((url, i) => (
-                                  url.match(/\.(heic|heif)$/i)
-                                    ? <div key={i} style={{ width:80, height:80, borderRadius:8, border:'1px solid var(--border)', background:'var(--bg3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:'var(--muted)', fontFamily:'monospace' }}>HEIC</div>
-                                    : <a key={i} href={url} target="_blank" rel="noreferrer"><img src={url} alt={`Bukti ${i+1}`} style={{ width:80, height:80, borderRadius:8, border:'1px solid var(--border)', objectFit:'cover', display:'block' }} /></a>
-                                ))}
+                        <div style={{ borderTop:'1px solid var(--border2)', background:'var(--bg2)' }}>
+                          {g.evs.map((ev, i) => (
+                            <div key={ev.id} style={{ padding:'12px 14px', borderBottom: i < g.evs.length-1 ? '1px solid var(--border2)' : 'none' }}>
+                              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+                                <div style={{ fontSize:12, fontWeight:600, color:'var(--cream)' }}>{ev.profile.nama}</div>
+                                <div style={{ fontSize:11, color:'var(--muted)', fontFamily:'monospace' }}>NIK {ev.profile.nik}</div>
                               </div>
+                              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'6px 16px', fontSize:12 }}>
+                                <Detail label="Kegiatan" value={ev.kegiatan.join('; ')} />
+                                <Detail label="Jam" value={`${ev.dari_jam}–${ev.sampai_jam}`} />
+                                <Detail label="Durasi" value={`${ev.durasi.toFixed(2)}j`} />
+                                <Detail label="Kompensasi" value={`${ev.total_jam.toFixed(2)}j`} />
+                                <Detail label="WFO/WFH" value={ev.wfo ? 'WFO' : 'WFH'} />
+                                <Detail label="Standby" value={ev.standby ? 'Ya' : 'Tidak'} />
+                              </div>
+                              {ev.bukti_urls && ev.bukti_urls.length > 0 && (
+                                <div style={{ marginTop:8 }}>
+                                  <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:1, color:'var(--gold)', marginBottom:6 }}>Bukti ({ev.bukti_urls.length})</div>
+                                  <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                                    {ev.bukti_urls.map((url, j) => (
+                                      url.match(/\.(heic|heif)$/i)
+                                        ? <div key={j} style={{ width:64, height:64, borderRadius:6, border:'1px solid var(--border)', background:'var(--bg3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, color:'var(--muted)', fontFamily:'monospace' }}>HEIC</div>
+                                        : <a key={j} href={url} target="_blank" rel="noreferrer"><img src={url} alt={`Bukti ${j+1}`} style={{ width:64, height:64, borderRadius:6, border:'1px solid var(--border)', objectFit:'cover', display:'block' }} /></a>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          )}
+                          ))}
                         </div>
                       )}
                     </div>
