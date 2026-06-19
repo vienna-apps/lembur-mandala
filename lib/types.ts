@@ -52,8 +52,7 @@ export const DEFAULT_PROJECTS = [
   'CAMBER BMS',
   'CAMBER KALTENG',
   'BKC',
-  'ATM - RECON',
-  'RECON QNB',
+  'ATMRECON - QNB',
 ] as const
 
 export const DEFAULT_SUGGESTIONS = [
