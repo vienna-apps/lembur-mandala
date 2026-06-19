@@ -148,7 +148,6 @@ export async function GET(req: NextRequest) {
     )
 
     // ── 3. Bukti Kegiatan cell (image → text) ─────────────────────────────────
-    // Template cell has <w:r><w:rPr><w:noProof/>...</w:drawing></w:r>
     xml = xml.replace(
       /<w:r><w:rPr><w:noProof\/>[\s\S]*?<\/w:drawing><\/w:r>/,
       mvRun('Bukti lebih lanjut dapat diakses di channel komunikasi tim'),
@@ -201,13 +200,31 @@ export async function GET(req: NextRequest) {
     }
 
     zip.file('word/document.xml', xml)
-    const docBuf = zip.generate({ type: 'nodebuffer' })
+
+    // ── 7. Strip fonts + unreferenced body images to reduce file size ─────────
+    // Remove embedded fonts (Word will fall back to system fonts)
+    Object.keys(zip.files)
+      .filter(f => f.startsWith('word/fonts/'))
+      .forEach(f => zip.remove(f))
+
+    // Find which rIds are still referenced in the modified document body
+    const referencedRids = new Set([...xml.matchAll(/r:embed="(rId\d+)"/g)].map(m => m[1]))
+    // Parse body rels and delete image files no longer referenced
+    const bodyRelsXml = zip.file('word/_rels/document.xml.rels')?.asText() ?? ''
+    const bodyRelsMatches = [...bodyRelsXml.matchAll(/<Relationship Id="(rId\d+)"[^>]*Target="(media\/[^"]+)"/g)]
+    for (const [, rid, target] of bodyRelsMatches) {
+      if (!referencedRids.has(rid)) {
+        zip.remove(`word/${target}`)
+      }
+    }
+
+    const docBuf = zip.generate({ type: 'nodebuffer', compression: 'DEFLATE' })
 
     const safeName = group.project.replace(/[^a-zA-Z0-9]/g, '-')
     outerZip.file(`MoO-${safeName}-${group.tanggal}.docx`, docBuf)
   }
 
-  const zipBuf = outerZip.generate({ type: 'nodebuffer' })
+  const zipBuf = outerZip.generate({ type: 'nodebuffer', compression: 'DEFLATE' })
   return new Response(new Uint8Array(zipBuf), {
     headers: {
       'Content-Type': 'application/zip',
