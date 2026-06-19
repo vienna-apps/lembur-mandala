@@ -78,18 +78,21 @@ function detailRow(cells: string[]): string {
 // Signing table: 2-col, right-aligned bold-name/title in col 0, empty col 1
 const SIG_RPRM_BOLD = '<w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:b/><w:bCs/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr>'
 const SIG_PPR_RIGHT = '<w:pPr><w:snapToGrid w:val="0"/><w:jc w:val="right"/><w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr></w:pPr>'
-const SIG_TBL_PR = '<w:tblPr><w:tblStyle w:val="TableGridLight"/><w:tblW w:w="0" w:type="auto"/><w:tblInd w:w="2160" w:type="dxa"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr>'
+// Landscape content width = 15840 - 806 (left margin) - 1440 (right margin) = 13594 twips
+const SIG_COL0 = 6800  // name/title column
+const SIG_COL1 = 6794  // signature space column (total = 13594)
+const SIG_TBL_PR = `<w:tblPr><w:tblStyle w:val="TableGridLight"/><w:tblW w:w="${SIG_COL0 + SIG_COL1}" w:type="dxa"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr>`
 const SIG_TC_BORDERS = '<w:tcBorders><w:top w:val="nil"/><w:left w:val="nil"/></w:tcBorders>'
 
-function sigTableRow(name: string, title: string, col0w: number, col1w: number): string {
+function sigTableRow(name: string, title: string): string {
   return (
     `<w:tr>` +
-    `<w:tc><w:tcPr><w:tcW w:w="${col0w}" w:type="dxa"/>${SIG_TC_BORDERS}<w:vAlign w:val="center"/></w:tcPr>` +
+    `<w:tc><w:tcPr><w:tcW w:w="${SIG_COL0}" w:type="dxa"/>${SIG_TC_BORDERS}<w:vAlign w:val="center"/></w:tcPr>` +
     `<w:p>${SIG_PPR_RIGHT}` +
     `<w:r>${SIG_RPRM_BOLD}<w:t>${escapeXml(name)}</w:t></w:r>` +
     `<w:r>${RPRM}<w:t>/${escapeXml(title)}</w:t></w:r>` +
     `</w:p></w:tc>` +
-    `<w:tc><w:tcPr><w:tcW w:w="${col1w}" w:type="dxa"/>${SIG_TC_BORDERS}<w:vAlign w:val="center"/></w:tcPr>` +
+    `<w:tc><w:tcPr><w:tcW w:w="${SIG_COL1}" w:type="dxa"/>${SIG_TC_BORDERS}<w:vAlign w:val="center"/></w:tcPr>` +
     `<w:p><w:pPr><w:jc w:val="center"/></w:pPr></w:p>` +
     `</w:tc>` +
     `</w:tr>`
@@ -223,23 +226,20 @@ export async function GET(req: NextRequest) {
     `<w:p w14:paraId="55F83FB4" w14:textId="101DBECB" w:rsidR="00052797" w:rsidRDefault="0022747D" w:rsidP="006F0248">${KOTA_PPR}${mvRun(`Bandung, ${today}`)}</w:p>`,
   )
 
-  // ── 5. Block 1 signing — replace paragraph block with 2-col table ──────────
+  // ── 5. Block 1 signing — replace paragraph block with 4-person 2-col table ───
   // Range: 4BCFDC35 (first title) → 38486396 (director name)
-  const sigTable1 = (
-    `<w:tbl>${SIG_TBL_PR}` +
-    sigTableRow('Vania Sanjaya', 'Tech Lead', 4616, 2944) +
-    sigTableRow('Ginan Ginanjar Pratama', 'Direktur', 4616, 2944) +
-    `</w:tbl>`
-  )
+  const SIGNERS: [string, string][] = [
+    ['Vania Sanjaya',          'Technical Lead'],
+    ['Silvia M. Purwani',      'Business Solution Dept. Lead'],
+    ['M. Rizki',               'Engineering Manager'],
+    ['Ginan G. Pramadita',     'Chief Technology Officer'],
+  ]
+  const sigTable1 = `<w:tbl>${SIG_TBL_PR}${SIGNERS.map(([n, t]) => sigTableRow(n, t)).join('')}</w:tbl>`
   xml = replaceParaBlock(xml, '4BCFDC35', '38486396', sigTable1)
 
   // ── 6. Block 2 signing — replace paragraph block after detail table ─────────
   // Range: 740CD5B8 (title) → 38DBD901 (name)
-  const sigTable2 = (
-    `<w:tbl>${SIG_TBL_PR}` +
-    sigTableRow('Vania Sanjaya', 'Tech Lead', 4678, 4232) +
-    `</w:tbl>`
-  )
+  const sigTable2 = `<w:tbl>${SIG_TBL_PR}${sigTableRow('Vania Sanjaya', 'Technical Lead')}</w:tbl>`
   xml = replaceParaBlock(xml, '740CD5B8', '38DBD901', sigTable2)
 
   zip.file('word/document.xml', xml)
