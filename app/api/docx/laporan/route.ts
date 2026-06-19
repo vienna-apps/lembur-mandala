@@ -32,6 +32,13 @@ function dataRun(text: string): string {
   return `<w:r>${RPRD}<w:t${space}>${escapeXml(text)}</w:t></w:r>`
 }
 
+// Detail table runs: Maven Pro, 7pt (sz=14 = 7pt in half-points)
+const RPRD_DET = '<w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:color w:val="262626"/><w:sz w:val="14"/><w:szCs w:val="14"/></w:rPr>'
+function detRun(text: string): string {
+  const space = (text.startsWith(' ') || text.endsWith(' ')) ? ' xml:space="preserve"' : ''
+  return `<w:r>${RPRD_DET}<w:t${space}>${escapeXml(text)}</w:t></w:r>`
+}
+
 // Summary table column widths
 const SUM_WIDTHS = [3237, 3237, 3238, 3238]
 // Detail table: 10 columns scaled to fit landscape content width (13594 twips)
@@ -61,7 +68,7 @@ function detHeaderCell(text: string, w: number): string {
     `<w:vAlign w:val="center"/>` +
     `</w:tcPr>` +
     `<w:p><w:pPr><w:jc w:val="center"/></w:pPr>` +
-    `<w:r><w:rPr><w:sz w:val="16"/></w:rPr><w:t>${escapeXml(text)}</w:t></w:r>` +
+    `${detRun(text)}` +
     `</w:p></w:tc>`
   )
 }
@@ -70,7 +77,7 @@ function detailRow(cells: string[]): string {
   const tcCells = cells.map((text, i) => (
     `<w:tc>` +
     `<w:tcPr><w:tcW w:w="${DET_WIDTHS[i]}" w:type="dxa"/></w:tcPr>` +
-    `<w:p>${PPR_360}${dataRun(text)}</w:p>` +
+    `<w:p>${PPR_360}${detRun(text)}</w:p>` +
     `</w:tc>`
   )).join('')
   return `<w:tr><w:trPr><w:cnfStyle w:val="000000100000" w:firstRow="0" w:lastRow="0" w:firstColumn="0" w:lastColumn="0" w:oddVBand="0" w:evenVBand="0" w:oddHBand="1" w:evenHBand="0" w:firstRowFirstColumn="0" w:firstRowLastColumn="0" w:lastRowFirstColumn="0" w:lastRowLastColumn="0"/></w:trPr>${tcCells}</w:tr>`
@@ -82,7 +89,7 @@ const SIG_RPRM_BOLD = '<w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/
 const SIG_PPR_LEFT = '<w:pPr><w:snapToGrid w:val="0"/><w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr></w:pPr>'
 const SIG_COL0 = 5000   // name/title column (left-aligned, tight to content)
 const SIG_COL1 = 8594   // signature space column — plenty of room to sign
-const SIG_TBL_PR = `<w:tblPr><w:tblStyle w:val="TableGridLight"/><w:tblW w:w="${SIG_COL0 + SIG_COL1}" w:type="dxa"/><w:tblInd w:w="0" w:type="dxa"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr>`
+const SIG_TBL_PR = `<w:tblPr><w:tblStyle w:val="TableGridLight"/><w:tblW w:w="${SIG_COL0 + SIG_COL1}" w:type="dxa"/><w:tblInd w:w="0" w:type="dxa"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="1" w:noVBand="1"/></w:tblPr>`
 const SIG_TC_BORDERS = '<w:tcBorders><w:top w:val="nil"/><w:left w:val="nil"/></w:tcBorders>'
 
 function sigTableRow(name: string, title: string): string {
