@@ -145,7 +145,8 @@ export default function AdminDashboard({ profile }: Props) {
   const notSubmitted = submissions.filter(s => s.status !== 'submitted')
   // People with no record at all won't appear — by design (no denominator)
 
-  const totalEvents = submissions.reduce((s,m) => s + (m.events?.length??0), 0)
+  const allEventsList = submissions.flatMap(s => s.events ?? [])
+  const totalEvents = new Set(allEventsList.map(e => `${e.hari_tanggal}__${e.project}`)).size
   const totalDurasi = submissions.reduce((s,m) => s + (m.events??[]).reduce((a,e)=>a+e.total_jam,0), 0)
 
   return (
