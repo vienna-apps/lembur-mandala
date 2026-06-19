@@ -34,8 +34,9 @@ function dataRun(text: string): string {
 
 // Summary table column widths
 const SUM_WIDTHS = [3237, 3237, 3238, 3238]
-// Detail table: 10 columns matching real laporan
-const DET_WIDTHS = [1842, 3444, 2211, 1020, 1027, 962, 1075, 1400, 795, 1105]
+// Detail table: 10 columns scaled to fit landscape content width (13594 twips)
+// Original widths from real laporan summed to 14881; scaled by 13594/14881
+const DET_WIDTHS = [1683, 3146, 2020, 932, 938, 879, 982, 1279, 726, 1009]
 const DET_HEADERS = ['Nama Karyawan', 'Kegiatan', 'Tanggal', 'Standby', 'Dari Jam', 'Sampai Jam', 'Selama (Jam)', 'Akhir Pekan / Tanggal Merah', 'WFO', 'Total (Jam)']
 
 const PPR_360 = '<w:pPr><w:spacing w:line="360" w:lineRule="auto"/></w:pPr>'
@@ -75,25 +76,25 @@ function detailRow(cells: string[]): string {
   return `<w:tr><w:trPr><w:cnfStyle w:val="000000100000" w:firstRow="0" w:lastRow="0" w:firstColumn="0" w:lastColumn="0" w:oddVBand="0" w:evenVBand="0" w:oddHBand="1" w:evenHBand="0" w:firstRowFirstColumn="0" w:firstRowLastColumn="0" w:lastRowFirstColumn="0" w:lastRowLastColumn="0"/></w:trPr>${tcCells}</w:tr>`
 }
 
-// Signing table: 2-col, right-aligned bold-name/title in col 0, empty col 1
-const SIG_RPRM_BOLD = '<w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:b/><w:bCs/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr>'
-const SIG_PPR_RIGHT = '<w:pPr><w:snapToGrid w:val="0"/><w:jc w:val="right"/><w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr></w:pPr>'
+// Signing table: 2-col, left-aligned bold-name/title in col 0, empty col 1 for signatures
 // Landscape content width = 15840 - 806 (left margin) - 1440 (right margin) = 13594 twips
-const SIG_COL0 = 6800  // name/title column
-const SIG_COL1 = 6794  // signature space column (total = 13594)
-const SIG_TBL_PR = `<w:tblPr><w:tblStyle w:val="TableGridLight"/><w:tblW w:w="${SIG_COL0 + SIG_COL1}" w:type="dxa"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr>`
+const SIG_RPRM_BOLD = '<w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:b/><w:bCs/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr>'
+const SIG_PPR_LEFT = '<w:pPr><w:snapToGrid w:val="0"/><w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr></w:pPr>'
+const SIG_COL0 = 5000   // name/title column (left-aligned, tight to content)
+const SIG_COL1 = 8594   // signature space column — plenty of room to sign
+const SIG_TBL_PR = `<w:tblPr><w:tblStyle w:val="TableGridLight"/><w:tblW w:w="${SIG_COL0 + SIG_COL1}" w:type="dxa"/><w:tblInd w:w="0" w:type="dxa"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr>`
 const SIG_TC_BORDERS = '<w:tcBorders><w:top w:val="nil"/><w:left w:val="nil"/></w:tcBorders>'
 
 function sigTableRow(name: string, title: string): string {
   return (
     `<w:tr>` +
     `<w:tc><w:tcPr><w:tcW w:w="${SIG_COL0}" w:type="dxa"/>${SIG_TC_BORDERS}<w:vAlign w:val="center"/></w:tcPr>` +
-    `<w:p>${SIG_PPR_RIGHT}` +
+    `<w:p>${SIG_PPR_LEFT}` +
     `<w:r>${SIG_RPRM_BOLD}<w:t>${escapeXml(name)}</w:t></w:r>` +
     `<w:r>${RPRM}<w:t>/${escapeXml(title)}</w:t></w:r>` +
     `</w:p></w:tc>` +
     `<w:tc><w:tcPr><w:tcW w:w="${SIG_COL1}" w:type="dxa"/>${SIG_TC_BORDERS}<w:vAlign w:val="center"/></w:tcPr>` +
-    `<w:p><w:pPr><w:jc w:val="center"/></w:pPr></w:p>` +
+    `<w:p></w:p>` +
     `</w:tc>` +
     `</w:tr>`
   )
@@ -211,6 +212,7 @@ export async function GET(req: NextRequest) {
     `<w:tblPr>` +
     `<w:tblStyle w:val="ListTable2-Accent1"/>` +
     `<w:tblW w:w="${detTblW}" w:type="dxa"/>` +
+    `<w:tblInd w:w="0" w:type="dxa"/>` +
     `<w:tblLook w:val="0480" w:firstRow="0" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/>` +
     `</w:tblPr>` +
     detHeaderRow + detDataRows +
