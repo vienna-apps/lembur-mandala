@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Profile, LemburMonth, LemburEvent, Deadline } from '@/lib/types'
 import { bulanLabel, bulanShort, currentBulan } from '@/lib/types'
-import { getAdminMonth, setDeadline, getDeadlines, getMonthDetail, deleteEvent, downloadDocx } from '@/lib/api'
+import { getAdminMonth, setDeadline, getDeadlines, getMonthDetail, deleteEvent, downloadDocx, adminForceSubmit } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import EventList from './EventList'
 import AddEventPanel from './AddEventPanel'
@@ -54,7 +54,8 @@ export default function AdminDashboard({ profile }: Props) {
   const [loading,        setLoading]        = useState(true)
   const [dlEditing,      setDlEditing]      = useState<string|null>(null)
   const [dlInputs,       setDlInputs]       = useState<Record<string,string>>({})
-  const [downloading,    setDownloading]    = useState<'laporan'|'moo'|null>(null)
+  const [downloading,    setDownloading]    = useState<string|null>(null)
+  const [forcing,        setForcing]        = useState<string|null>(null) // month id being forced
 
   // Admin's own lembur
   const [myEvents,       setMyEvents]       = useState<LemburEvent[]>([])
@@ -109,11 +110,14 @@ export default function AdminDashboard({ profile }: Props) {
     setDlEditing(null)
   }
 
-  async function handleDownload(type: 'laporan'|'moo') {
-    setDownloading(type)
+  async function handleDownload(type: 'laporan'|'moo', tanggal?: string) {
+    const key = tanggal ? `moo-${tanggal}` : type
+    setDownloading(key)
     try {
       if (type === 'laporan') {
         await downloadDocx(`/api/docx/laporan?bulan=${activeBulan}`, `Laporan-Lembur-Mandala-${activeBulan}.docx`)
+      } else if (tanggal) {
+        await downloadDocx(`/api/docx/moo?bulan=${activeBulan}&tanggal=${tanggal}&single=1`, `MoO-Mandala-${tanggal}.docx`)
       } else {
         await downloadDocx(`/api/docx/moo?bulan=${activeBulan}`, `MoO-Mandala-${activeBulan}.zip`)
       }
@@ -121,6 +125,23 @@ export default function AdminDashboard({ profile }: Props) {
       alert(e instanceof Error ? e.message : 'Gagal mengunduh dokumen.')
     } finally {
       setDownloading(null)
+    }
+  }
+
+  const mooDates = Array.from(new Set(submissions.flatMap(s => s.events.map(e => e.hari_tanggal)))).sort()
+
+  async function handleForceSubmit(sub: Submission) {
+    const newStatus = sub.status === 'submitted' ? 'draft' : 'submitted'
+    const label = newStatus === 'submitted' ? 'submitted' : 'draft'
+    if (!confirm(`Force-mark ${sub.profile.nama} sebagai ${label} untuk bulan ini?`)) return
+    setForcing(sub.id)
+    try {
+      await adminForceSubmit(activeBulan, sub.profile.id, newStatus)
+      await loadMonth(activeBulan)
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Gagal update status.')
+    } finally {
+      setForcing(null)
     }
   }
 
@@ -242,6 +263,20 @@ export default function AdminDashboard({ profile }: Props) {
             </div>
           </div>
 
+          {mooDates.length > 0 && (
+            <div style={{ display:'flex', alignItems:'center', gap:7, flexWrap:'wrap', padding:'10px 24px', borderBottom:'1px solid var(--border2)', background:'rgba(126,31,44,.06)' }}>
+              <span style={{ fontSize:11, color:'var(--muted)', marginRight:3 }}>MoO per tanggal:</span>
+              {mooDates.map(tanggal => {
+                const key = `moo-${tanggal}`
+                const label = new Date(`${tanggal}T00:00:00`).toLocaleDateString('id-ID', { day:'numeric', month:'short' })
+                return <button key={tanggal} onClick={() => handleDownload('moo', tanggal)} disabled={downloading !== null}
+                  style={{ padding:'6px 10px', borderRadius:'var(--r2)', border:'1px solid var(--border)', background:'var(--bg3)', color:'var(--cream)', fontFamily:'DM Sans,sans-serif', fontSize:11, cursor: downloading ? 'not-allowed' : 'pointer', opacity: downloading === key ? .6 : 1 }}>
+                  {downloading === key ? 'Loading…' : 'MoO'} {label}
+                </button>
+              })}
+            </div>
+          )}
+
           {/* Deadline alert */}
           {dlDate && (
             <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 24px', background:'rgba(212,136,10,.08)', borderBottom:'1px solid rgba(212,136,10,.2)' }}>
@@ -314,9 +349,17 @@ export default function AdminDashboard({ profile }: Props) {
                         <div style={{ fontFamily:'Cormorant Garamond,serif', fontSize:18, fontWeight:600, color:'var(--gold)', textAlign:'right', lineHeight:1 }}>{jam.toFixed(1)}j</div>
                         <div style={{ fontSize:10, color:'var(--muted)' }}>kompensasi</div>
                       </div>
-                      <div style={{ display:'flex', alignItems:'center', gap:5, padding:'4px 11px', borderRadius:20, fontSize:11, fontWeight:600, whiteSpace:'nowrap', ...(sub.status==='submitted' ? {background:'rgba(58,158,95,.12)',color:'#6fcf97',border:'1px solid rgba(58,158,95,.25)'} : {background:'var(--amberbg)',color:'var(--gold2)',border:'1px solid rgba(212,136,10,.22)'}) }}>
-                        <div style={{ width:6, height:6, borderRadius:'50%', background:'currentColor' }} />
-                        {sub.status === 'submitted' ? 'Submitted' : 'Draft'}
+                      <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                        <button
+                          disabled={forcing === sub.id}
+                          onClick={e => { e.stopPropagation(); handleForceSubmit(sub) }}
+                          style={{ padding:'4px 10px', borderRadius:20, border:`1px solid ${sub.status==='submitted' ? 'rgba(212,136,10,.4)' : 'rgba(58,158,95,.4)'}`, background:'transparent', color: sub.status==='submitted' ? 'var(--gold2)' : '#6fcf97', fontFamily:'DM Sans,sans-serif', fontSize:10, fontWeight:600, cursor: forcing===sub.id ? 'not-allowed' : 'pointer', whiteSpace:'nowrap', opacity: forcing===sub.id ? .5 : 1 }}>
+                          {forcing === sub.id ? '…' : sub.status === 'submitted' ? '↩ Unsubmit' : '✓ Force Submit'}
+                        </button>
+                        <div style={{ display:'flex', alignItems:'center', gap:5, padding:'4px 11px', borderRadius:20, fontSize:11, fontWeight:600, whiteSpace:'nowrap', ...(sub.status==='submitted' ? {background:'rgba(58,158,95,.12)',color:'#6fcf97',border:'1px solid rgba(58,158,95,.25)'} : {background:'var(--amberbg)',color:'var(--gold2)',border:'1px solid rgba(212,136,10,.22)'}) }}>
+                          <div style={{ width:6, height:6, borderRadius:'50%', background:'currentColor' }} />
+                          {sub.status === 'submitted' ? 'Submitted' : 'Draft'}
+                        </div>
                       </div>
                     </div>
                     {expanded && (

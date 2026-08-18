@@ -169,7 +169,7 @@ function mooDataRow(cells: string[]): string {
 // pPr XML for info paragraphs (spacing + rPr)
 const INFO_PPR = '<w:pPr><w:spacing w:line="360" w:lineRule="auto"/><w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr></w:pPr>'
 
-// GET /api/docx/moo?bulan=2026-06
+// GET /api/docx/moo?bulan=2026-06[&tanggal=2026-08-07][&single=1]
 export async function GET(req: NextRequest) {
   const user = await verifyToken(token(req))
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -180,6 +180,10 @@ export async function GET(req: NextRequest) {
 
   const bulan = req.nextUrl.searchParams.get('bulan') ?? ''
   if (!bulan) return NextResponse.json({ error: 'bulan required' }, { status: 400 })
+  const requestedDates = new Set(
+    req.nextUrl.searchParams.getAll('tanggal').flatMap(value => value.split(',')).filter(value => /^\d{4}-\d{2}-\d{2}$/.test(value)),
+  )
+  const singleDocument = req.nextUrl.searchParams.get('single') === '1'
 
   const { data: months } = await db
     .from('lembur_months')
@@ -195,10 +199,16 @@ export async function GET(req: NextRequest) {
     for (const ev of (m.events ?? [])) allEvents.push({ ...ev, profile: m.profile })
   }
   allEvents.sort((a, b) => a.hari_tanggal.localeCompare(b.hari_tanggal))
+  const filteredEvents = requestedDates.size > 0
+    ? allEvents.filter(ev => requestedDates.has(ev.hari_tanggal))
+    : allEvents
+  if (requestedDates.size > 0 && filteredEvents.length === 0) {
+    return NextResponse.json({ error: 'Tidak ada data untuk tanggal yang dipilih.' }, { status: 404 })
+  }
 
   // Group by project + date
-  const groupMap = new Map<string, typeof allEvents>()
-  for (const ev of allEvents) {
+  const groupMap = new Map<string, typeof filteredEvents>()
+  for (const ev of filteredEvents) {
     const key = `${ev.project}__${ev.hari_tanggal}`
     if (!groupMap.has(key)) groupMap.set(key, [])
     groupMap.get(key)!.push(ev)
@@ -221,6 +231,7 @@ export async function GET(req: NextRequest) {
 
   const templateBuf = readFileSync(join(process.cwd(), 'templates', 'moo-template.docx'))
   const outerZip = new PizZip()
+  const generatedDocs: Array<{ name: string; data: Buffer }> = []
 
   for (const group of groups) {
     const zip = new PizZip(templateBuf)
@@ -371,7 +382,18 @@ export async function GET(req: NextRequest) {
     const docBuf = zip.generate({ type: 'nodebuffer', compression: 'DEFLATE' })
 
     const safeName = group.project.replace(/[^a-zA-Z0-9]/g, '-')
-    outerZip.file(`MoO-${safeName}-${group.tanggal}.docx`, docBuf)
+    const filename = `MoO-${safeName}-${group.tanggal}.docx`
+    outerZip.file(filename, docBuf)
+    generatedDocs.push({ name: filename, data: docBuf })
+  }
+
+  if (singleDocument && generatedDocs.length === 1) {
+    return new Response(new Uint8Array(generatedDocs[0].data), {
+      headers: {
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'Content-Disposition': `attachment; filename="${generatedDocs[0].name}"`,
+      },
+    })
   }
 
   const zipBuf = outerZip.generate({ type: 'nodebuffer', compression: 'DEFLATE' })
