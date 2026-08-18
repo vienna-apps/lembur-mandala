@@ -63,6 +63,10 @@ export async function getAdminMonth(bulan: string) {
   return apiFetch(`/api/admin/months/${bulan}`)
 }
 
+export async function adminForceSubmit(bulan: string, user_id: string, status: 'submitted' | 'draft') {
+  return apiFetch(`/api/admin/months/${bulan}`, { method: 'PATCH', body: JSON.stringify({ user_id, status }) })
+}
+
 // ── Suggestions ───────────────────────────────────────
 export async function getSuggestions(q?: string): Promise<string[]> {
   const url = q ? `/api/suggestions?q=${encodeURIComponent(q)}` : '/api/suggestions'
