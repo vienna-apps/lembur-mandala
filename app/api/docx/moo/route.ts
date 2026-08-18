@@ -15,7 +15,7 @@ type ProofImage = {
 }
 
 const PROOF_RIDS = ['rId6', 'rId7', 'rId8'] as const
-const MAX_PROOFS = 5
+const MAX_PROOFS = 20
 const MAX_PROOF_BYTES = 10 * 1024 * 1024
 const MAX_IMAGE_WIDTH_EMU = 6_800_000
 const MAX_IMAGE_HEIGHT_EMU = 4_100_000
@@ -231,12 +231,9 @@ export async function GET(req: NextRequest) {
     const timeRange = `${group.minStart} – ${group.maxEnd}`
     const dateFmt = fmtDate(group.tanggal)
     const dateShort = fmtDateShort(group.tanggal)
-    // MoO proofs belong to the primary submitter's event. Vania's ATMRecon
-    // records carry the intended proof set; merging every attendee's uploads
-    // makes unrelated QC/development screenshots appear before those proofs.
-    const primaryProofEvents = group.events.filter(e => e.profile.nama === 'Vania Sanjaya' && (e.bukti_urls?.length ?? 0) > 0)
-    const proofEvents = primaryProofEvents.length > 0 ? primaryProofEvents : group.events
-    const buktiUrls = [...new Set(proofEvents.flatMap(e => e.bukti_urls ?? []))]
+    // Include every proof uploaded by every attendee for this project/date.
+    // Deduplicate URLs while preserving the event/upload order.
+    const buktiUrls = [...new Set(group.events.flatMap(e => e.bukti_urls ?? []))]
     const { images: proofImages, fallbackUrls } = await fetchProofImages(buktiUrls)
 
     // ── 1. Info table value cells ─────────────────────────────────────────────
