@@ -85,13 +85,13 @@ function detailRow(cells: string[]): string {
 
 // ── Signing tables ────────────────────────────────────────────────────────────
 const SIG_RPRM_BOLD = '<w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:b/><w:bCs/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr>'
-const SIG_PPR = '<w:pPr><w:spacing w:line="360" w:lineRule="auto"/><w:snapToGrid w:val="0"/><w:jc w:val="right"/><w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr></w:pPr>'
+const SIG_PPR = '<w:pPr><w:snapToGrid w:val="0"/><w:jc w:val="right"/><w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr></w:pPr>'
 const SIG_PPR_COL1 = '<w:pPr><w:snapToGrid w:val="0"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr></w:pPr>'
 
-// Block 1: 4-signer table (806 page margin + 4004 indent = Aug 2024 absolute start at 4810 twips)
+// Block 1: exact geometry from the August 2024 report.
 const SIG1_COL0 = 4616
 const SIG1_COL1 = 2658
-const SIG1_TBL_PR = `<w:tblPr><w:tblStyle w:val="TableGridLight"/><w:tblW w:w="0" w:type="auto"/><w:tblInd w:w="4004" w:type="dxa"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr><w:tblGrid><w:gridCol w:w="${SIG1_COL0}"/><w:gridCol w:w="${SIG1_COL1}"/></w:tblGrid>`
+const SIG1_TBL_PR = `<w:tblPr><w:tblStyle w:val="TableGridLight"/><w:tblW w:w="0" w:type="auto"/><w:tblInd w:w="4090" w:type="dxa"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr><w:tblGrid><w:gridCol w:w="${SIG1_COL0}"/><w:gridCol w:w="${SIG1_COL1}"/></w:tblGrid>`
 
 function sig1Row(name: string, title: string, isFirst: boolean): string {
   const b0 = isFirst
@@ -101,11 +101,12 @@ function sig1Row(name: string, title: string, isFirst: boolean): string {
     ? '<w:tcBorders><w:top w:val="nil"/><w:right w:val="nil"/></w:tcBorders>'
     : '<w:tcBorders><w:right w:val="nil"/></w:tcBorders>'
   return (
-    `<w:tr><w:trPr><w:trHeight w:val="616"/></w:trPr>` +
+    `<w:tr><w:trPr><w:trHeight w:val="360"/></w:trPr>` +
     `<w:tc><w:tcPr><w:tcW w:w="${SIG1_COL0}" w:type="dxa"/>${b0}<w:vAlign w:val="center"/></w:tcPr>` +
     `<w:p>${SIG_PPR}` +
     `<w:r>${SIG_RPRM_BOLD}<w:t>${escapeXml(name)}</w:t></w:r>` +
     `<w:r>${RPRM}<w:t>/${escapeXml(title)}</w:t></w:r>` +
+    (isFirst ? `<w:r>${SIG_RPRM_BOLD}<w:t xml:space="preserve"> </w:t></w:r>` : '') +
     `</w:p></w:tc>` +
     `<w:tc><w:tcPr><w:tcW w:w="${SIG1_COL1}" w:type="dxa"/>${b1}<w:vAlign w:val="center"/></w:tcPr>` +
     `<w:p>${SIG_PPR_COL1}</w:p>` +
@@ -214,6 +215,10 @@ export async function GET(req: NextRequest) {
   // ── 0. Fix page margins to match reference (left=806, bottom=173) ──────────
   xml = xml.replace(/<w:pgMar([^/]*)\/>/,
     (m) => m.replace(/w:bottom="\d+"/, 'w:bottom="173"').replace(/w:left="\d+"/, 'w:left="806"'))
+
+  // The source template contains leftover two- and three-column sections.
+  // They make Word flow the four signer rows across separate page columns.
+  xml = xml.replace(/<w:cols\b[^>]*\/>/g, (m) => m.replace(/\s+w:num="\d+"/, ''))
 
   // ── 1. Info table value cells (paraIds from template) ─────────────────────
   xml = injectIntoEmptyPara(xml, '3877C8AA', 'MANDALA')
