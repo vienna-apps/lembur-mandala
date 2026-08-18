@@ -83,29 +83,71 @@ function detailRow(cells: string[]): string {
   return `<w:tr><w:trPr><w:cnfStyle w:val="000000100000" w:firstRow="0" w:lastRow="0" w:firstColumn="0" w:lastColumn="0" w:oddVBand="0" w:evenVBand="0" w:oddHBand="1" w:evenHBand="0" w:firstRowFirstColumn="0" w:firstRowLastColumn="0" w:lastRowFirstColumn="0" w:lastRowLastColumn="0"/></w:trPr>${tcCells}</w:tr>`
 }
 
-// Signing table: 2-col, left-aligned bold-name/title in col 0, empty col 1 for signatures
-// Landscape content width = 15840 - 806 (left margin) - 1440 (right margin) = 13594 twips
+// ── Signing tables ────────────────────────────────────────────────────────────
 const SIG_RPRM_BOLD = '<w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:b/><w:bCs/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr>'
-const SIG_PPR_LEFT = '<w:pPr><w:snapToGrid w:val="0"/><w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr></w:pPr>'
-const SIG_COL0 = 5000   // name/title column (left-aligned, tight to content)
-const SIG_COL1 = 8594   // signature space column — plenty of room to sign
-const SIG_TBL_PR = `<w:tblPr><w:tblStyle w:val="TableGridLight"/><w:tblW w:w="${SIG_COL0 + SIG_COL1}" w:type="dxa"/><w:tblInd w:w="0" w:type="dxa"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="1" w:noVBand="1"/></w:tblPr>`
-const SIG_TC_BORDERS = '<w:tcBorders><w:top w:val="nil"/><w:left w:val="nil"/></w:tcBorders>'
+const SIG_PPR = '<w:pPr><w:spacing w:line="360" w:lineRule="auto"/><w:snapToGrid w:val="0"/><w:jc w:val="right"/><w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr></w:pPr>'
+const SIG_PPR_COL1 = '<w:pPr><w:snapToGrid w:val="0"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr></w:pPr>'
 
-function sigTableRow(name: string, title: string): string {
+// Block 1: 4-signer table (806 page margin + 4004 indent = Aug 2024 absolute start at 4810 twips)
+const SIG1_COL0 = 4616
+const SIG1_COL1 = 2658
+const SIG1_TBL_PR = `<w:tblPr><w:tblStyle w:val="TableGridLight"/><w:tblW w:w="0" w:type="auto"/><w:tblInd w:w="4004" w:type="dxa"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr><w:tblGrid><w:gridCol w:w="${SIG1_COL0}"/><w:gridCol w:w="${SIG1_COL1}"/></w:tblGrid>`
+
+function sig1Row(name: string, title: string, isFirst: boolean): string {
+  const b0 = isFirst
+    ? '<w:tcBorders><w:top w:val="nil"/><w:left w:val="nil"/></w:tcBorders>'
+    : '<w:tcBorders><w:left w:val="nil"/></w:tcBorders>'
+  const b1 = isFirst
+    ? '<w:tcBorders><w:top w:val="nil"/><w:right w:val="nil"/></w:tcBorders>'
+    : '<w:tcBorders><w:right w:val="nil"/></w:tcBorders>'
   return (
-    `<w:tr>` +
-    `<w:tc><w:tcPr><w:tcW w:w="${SIG_COL0}" w:type="dxa"/>${SIG_TC_BORDERS}<w:vAlign w:val="center"/></w:tcPr>` +
-    `<w:p>${SIG_PPR_LEFT}` +
+    `<w:tr><w:trPr><w:trHeight w:val="616"/></w:trPr>` +
+    `<w:tc><w:tcPr><w:tcW w:w="${SIG1_COL0}" w:type="dxa"/>${b0}<w:vAlign w:val="center"/></w:tcPr>` +
+    `<w:p>${SIG_PPR}` +
     `<w:r>${SIG_RPRM_BOLD}<w:t>${escapeXml(name)}</w:t></w:r>` +
     `<w:r>${RPRM}<w:t>/${escapeXml(title)}</w:t></w:r>` +
     `</w:p></w:tc>` +
-    `<w:tc><w:tcPr><w:tcW w:w="${SIG_COL1}" w:type="dxa"/>${SIG_TC_BORDERS}<w:vAlign w:val="center"/></w:tcPr>` +
-    `<w:p></w:p>` +
-    `</w:tc>` +
-    `</w:tr>`
+    `<w:tc><w:tcPr><w:tcW w:w="${SIG1_COL1}" w:type="dxa"/>${b1}<w:vAlign w:val="center"/></w:tcPr>` +
+    `<w:p>${SIG_PPR_COL1}</w:p>` +
+    `</w:tc></w:tr>`
   )
 }
+
+// Post-detail portrait-section Vania sig tables — matched exactly to reference (2026-06 v8)
+// pPr for the name cell: right-aligned, no spacing override
+const SIG_POST_PPR_L = '<w:pPr><w:snapToGrid w:val="0"/><w:jc w:val="right"/><w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr></w:pPr>'
+const TBLSIG_LOOK = 'w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"'
+const EMPTY_SIG_PARA = '<w:p><w:pPr><w:spacing w:line="360" w:lineRule="auto"/><w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr></w:pPr></w:p>'
+
+// T4: indented (tblInd=5670), cols 4678+4232, /Technical Lead no leading space, trailing bold space
+const sigPostDetailT4 = (
+  `<w:tbl>` +
+  `<w:tblPr><w:tblStyle w:val="TableGridLight"/><w:tblW w:w="8910" w:type="dxa"/><w:tblInd w:w="5670" w:type="dxa"/><w:tblLook ${TBLSIG_LOOK}/></w:tblPr>` +
+  `<w:tblGrid><w:gridCol w:w="4678"/><w:gridCol w:w="4232"/></w:tblGrid>` +
+  `<w:tr><w:trPr><w:trHeight w:val="759"/></w:trPr>` +
+  `<w:tc><w:tcPr><w:tcW w:w="4678" w:type="dxa"/><w:tcBorders><w:top w:val="nil"/><w:left w:val="nil"/></w:tcBorders><w:vAlign w:val="center"/></w:tcPr>` +
+  `<w:p>${SIG_POST_PPR_L}` +
+  `<w:r>${SIG_RPRM_BOLD}<w:t>Vania Sanjaya</w:t></w:r>` +
+  `<w:r>${RPRM}<w:t>/Technical Lead</w:t></w:r>` +
+  `<w:r>${SIG_RPRM_BOLD}<w:t xml:space="preserve"> </w:t></w:r>` +
+  `</w:p></w:tc>` +
+  `<w:tc><w:tcPr><w:tcW w:w="4232" w:type="dxa"/><w:tcBorders><w:top w:val="nil"/><w:right w:val="nil"/></w:tcBorders><w:vAlign w:val="center"/></w:tcPr>` +
+  `<w:p>${SIG_PPR_COL1}</w:p></w:tc></w:tr></w:tbl>`
+)
+// T5: no indent, cols 4230+4232, " / Technical Lead" with leading space
+const sigPostDetailT5 = (
+  `<w:tbl>` +
+  `<w:tblPr><w:tblStyle w:val="TableGridLight"/><w:tblW w:w="8462" w:type="dxa"/><w:tblLook ${TBLSIG_LOOK}/></w:tblPr>` +
+  `<w:tblGrid><w:gridCol w:w="4230"/><w:gridCol w:w="4232"/></w:tblGrid>` +
+  `<w:tr><w:trPr><w:trHeight w:val="759"/></w:trPr>` +
+  `<w:tc><w:tcPr><w:tcW w:w="4230" w:type="dxa"/><w:tcBorders><w:top w:val="nil"/><w:left w:val="nil"/></w:tcBorders><w:vAlign w:val="center"/></w:tcPr>` +
+  `<w:p>${SIG_POST_PPR_L}` +
+  `<w:r>${SIG_RPRM_BOLD}<w:t>Vania Sanjaya</w:t></w:r>` +
+  `<w:r>${RPRM}<w:t xml:space="preserve"> / Technical Lead</w:t></w:r>` +
+  `</w:p></w:tc>` +
+  `<w:tc><w:tcPr><w:tcW w:w="4232" w:type="dxa"/><w:tcBorders><w:top w:val="nil"/><w:right w:val="nil"/></w:tcBorders><w:vAlign w:val="center"/></w:tcPr>` +
+  `<w:p>${SIG_PPR_COL1}</w:p></w:tc></w:tr></w:tbl>`
+)
 
 // Inject a text run into an empty paragraph cell identified by paraId
 function injectIntoEmptyPara(xml: string, paraId: string, text: string): string {
@@ -168,6 +210,10 @@ export async function GET(req: NextRequest) {
   const templateBuf = readFileSync(join(process.cwd(), 'templates', 'laporan-template.docx'))
   const zip = new PizZip(templateBuf)
   let xml = zip.file('word/document.xml')!.asText()
+
+  // ── 0. Fix page margins to match reference (left=806, bottom=173) ──────────
+  xml = xml.replace(/<w:pgMar([^/]*)\/>/,
+    (m) => m.replace(/w:bottom="\d+"/, 'w:bottom="173"').replace(/w:left="\d+"/, 'w:left="806"'))
 
   // ── 1. Info table value cells (paraIds from template) ─────────────────────
   xml = injectIntoEmptyPara(xml, '3877C8AA', 'MANDALA')
@@ -243,13 +289,11 @@ export async function GET(req: NextRequest) {
     ['M. Rizki',               'Engineering Manager'],
     ['Ginan G. Pramadita',     'Chief Technology Officer'],
   ]
-  const sigTable1 = `<w:tbl>${SIG_TBL_PR}${SIGNERS.map(([n, t]) => sigTableRow(n, t)).join('')}</w:tbl>`
+  const sigTable1 = `<w:tbl>${SIG1_TBL_PR}${SIGNERS.map(([n, t], i) => sig1Row(n, t, i === 0)).join('')}</w:tbl>`
   xml = replaceParaBlock(xml, '4BCFDC35', '38486396', sigTable1)
 
-  // ── 6. Block 2 signing — replace paragraph block after detail table ─────────
-  // Range: 740CD5B8 (title) → 38DBD901 (name)
-  const sigTable2 = `<w:tbl>${SIG_TBL_PR}${sigTableRow('Vania Sanjaya', 'Technical Lead')}</w:tbl>`
-  xml = replaceParaBlock(xml, '740CD5B8', '38DBD901', sigTable2)
+  // ── 6. Block 2 signing — two Vania tables matching reference (T4 indented + T5 unindented)
+  xml = replaceParaBlock(xml, '740CD5B8', '38DBD901', sigPostDetailT4 + EMPTY_SIG_PARA + EMPTY_SIG_PARA + sigPostDetailT5)
 
   zip.file('word/document.xml', xml)
   const buf = zip.generate({ type: 'nodebuffer' })
