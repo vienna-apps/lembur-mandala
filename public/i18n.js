@@ -8,6 +8,7 @@
   var OWNED_HOST = /(^|\.)(vercel\.app)$/i;
   var originalText = new WeakMap();
   var originalAttrs = new WeakMap();
+  var originalTitle = document.title;
   var config = getPageConfig();
   if (!config) return;
 
@@ -53,7 +54,9 @@
     var trimmed = original.trim();
     if (!trimmed) return;
     var replacement = mapped(trimmed, language);
-    var nextValue = original.replace(trimmed, replacement);
+    var nextValue = language === 'zh-Hant-TW' && /[\u3400-\u9fff]/.test(replacement)
+      ? replacement
+      : original.replace(trimmed, replacement);
     if (node.nodeValue !== nextValue) node.nodeValue = nextValue;
   }
 
@@ -104,6 +107,7 @@
   function setLanguage(language, updateUrl) {
     if (SUPPORTED.indexOf(language) < 0) language = config.source || 'en';
     document.documentElement.lang = language;
+    document.title = mapped(originalTitle, language);
     document.body.dataset.language = language;
     document.body.dataset.lang = language;
     translateTree(document.body, language);
