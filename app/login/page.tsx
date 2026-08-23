@@ -132,6 +132,12 @@ export default function LoginPage() {
           <button className="btn-primary" type="submit" disabled={busy} style={{ width: '100%', opacity: busy ? .7 : 1 }}>
             {busy ? 'Memuat…' : 'Masuk →'}
           </button>
+          <Link href="/demo" className="btn-ghost" style={{ display: 'block', width: '100%', marginTop: 10, padding: '11px 14px', border: '1px solid var(--border)', borderRadius: 10, textAlign: 'center', textDecoration: 'none', color: 'var(--brown)', fontSize: 13, fontWeight: 600 }}>
+            Coba demo tanpa akun
+          </Link>
+          <div style={{ marginTop: 8, textAlign: 'center', color: 'var(--muted)', fontSize: 11 }}>
+            Data contoh aman · tidak terhubung ke data karyawan
+          </div>
         </form>
 
         <div style={{ marginTop: 28, textAlign: 'center', fontSize: 12, color: 'var(--muted)' }}>
