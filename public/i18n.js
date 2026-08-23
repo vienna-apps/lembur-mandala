@@ -34,8 +34,7 @@
     'vienna · banking — Dashboard Demo': { en: 'vienna · banking — Dashboard Demo', 'zh-Hant-TW': 'vienna · banking — 銀行儀表板展示' },
     'vienna · Sticker Nama — Label Tom & Jerry': { en: 'vienna · Name Stickers — Tom & Jerry Labels', 'zh-Hant-TW': 'vienna · 姓名貼 — Tom & Jerry 標籤' }
   };
-  var config = getPageConfig();
-  if (!config) return;
+  var config;
 
   function normalizedPath() {
     var path = location.pathname.replace(/\/+$/, '') || '/';
@@ -209,15 +208,30 @@
   style.textContent = '.vie-language-switch{position:fixed;top:var(--vie-lang-top,12px);right:var(--vie-lang-right,12px);z-index:2147483000;display:flex;align-items:center;padding:3px;border:1px solid var(--vie-lang-border,rgba(40,35,32,.18));border-radius:999px;background:var(--vie-lang-bg,rgba(255,255,255,.88));color:var(--vie-lang-fg,#322b28);box-shadow:0 8px 28px rgba(0,0,0,.12);backdrop-filter:blur(12px);font:700 10px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.04em}.vie-language-switch button{min-width:34px;height:28px;padding:0 8px;border:0;border-radius:999px;background:transparent;color:inherit;font:inherit;cursor:pointer}.vie-language-switch button:hover{background:rgba(127,127,127,.12)}.vie-language-switch button.is-active{background:var(--vie-lang-active,#322b28);color:var(--vie-lang-active-fg,#fff)}.vie-language-switch button:focus-visible{outline:2px solid var(--vie-lang-focus,#c4848b);outline-offset:2px}.vie-studio-dock{position:fixed;left:12px;bottom:12px;z-index:2147482999;width:min(310px,calc(100vw - 24px));padding:10px 12px;border:1px solid rgba(40,35,32,.18);border-radius:16px;background:rgba(255,255,255,.92);color:#242033;box-shadow:0 12px 38px rgba(0,0,0,.16);backdrop-filter:blur(14px);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.vie-studio-dock>span{display:block;margin-bottom:7px;color:#6b6576;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase}.vie-studio-dock>div{display:flex;flex-wrap:wrap;gap:7px 12px}.vie-studio-dock a{color:inherit;font-size:11px;font-weight:750;text-decoration:underline;text-decoration-color:rgba(79,107,255,.45);text-underline-offset:3px}.vie-studio-dock a:hover{color:#4f6bff}.vie-studio-dock a:focus-visible{outline:2px solid #4f6bff;outline-offset:3px;border-radius:3px}@media(max-width:640px){.vie-language-switch{top:var(--vie-lang-mobile-top,8px);right:var(--vie-lang-mobile-right,8px)}.vie-language-switch button{min-width:31px;padding:0 6px}.vie-studio-dock{left:8px;bottom:8px;width:min(286px,calc(100vw - 16px));padding:8px 10px}}@media print{.vie-language-switch,.vie-studio-dock{display:none!important}}';
   document.head.appendChild(style);
 
-  createSwitch();
-  createStudioDock();
-  var language = requestedLanguage();
-  setLanguage(language, false);
-  var observer = new MutationObserver(function (records) {
-    records.forEach(function (record) {
-      record.addedNodes.forEach(function (node) { translateTree(node, language); });
+  function start() {
+    if (window.__VIE_I18N_STARTED__) return true;
+    config = getPageConfig();
+    if (!config || !document.body) return false;
+    window.__VIE_I18N_STARTED__ = true;
+    createSwitch();
+    createStudioDock();
+    var language = requestedLanguage();
+    setLanguage(language, false);
+    var observer = new MutationObserver(function (records) {
+      records.forEach(function (record) {
+        record.addedNodes.forEach(function (node) { translateTree(node, language); });
+      });
     });
-  });
-  observer.observe(document.body, { childList: true, subtree: true });
-  window.addEventListener('vie:languagechange', function (event) { language = event.detail.language; });
+    observer.observe(document.body, { childList: true, subtree: true });
+    window.addEventListener('vie:languagechange', function (event) { language = event.detail.language; });
+    return true;
+  }
+
+  if (!start()) {
+    var attempts = 0;
+    var retry = window.setInterval(function () {
+      attempts += 1;
+      if (start() || attempts >= 100) window.clearInterval(retry);
+    }, 50);
+  }
 })();
