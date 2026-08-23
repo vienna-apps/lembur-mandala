@@ -2,9 +2,9 @@ import Link from 'next/link'
 import './demo.css'
 
 const sampleEvents = [
-  { date: '12 Aug 2026', title: 'BI-FAST reconciliation support', detail: '19:00–22:30 · WFH', project: 'Banking', hours: '3.5j' },
-  { date: '16 Aug 2026', title: 'Production release monitoring', detail: '20:00–23:00 · WFO', project: 'Release', hours: '4.5j' },
-  { date: '21 Aug 2026', title: 'Monthly report validation', detail: '18:30–21:00 · WFH', project: 'Mandala', hours: '2.5j' },
+  { date: '12 Aug 2026', title: 'BI-FAST reconciliation support', detail: '19:00–22:30 · WFH', project: 'Banking', hours: '3.5h' },
+  { date: '16 Aug 2026', title: 'Production release monitoring', detail: '20:00–23:00 · WFO', project: 'Release', hours: '4.5h' },
+  { date: '21 Aug 2026', title: 'Monthly report validation', detail: '18:30–21:00 · WFH', project: 'Mandala', hours: '2.5h' },
 ]
 
 export default function DemoPage() {

@@ -31,7 +31,8 @@
         'Check hours, project, and evidence': 'Periksa jam, proyek, dan bukti', 'Submit to admin': 'Kirim ke admin',
         'Locked in this public demo': 'Dikunci pada demo publik ini', 'Overtime events': 'Event lembur',
         '3 sample events': '3 event contoh', 'BI-FAST reconciliation support': 'Dukungan rekonsiliasi BI-FAST',
-        'Production release monitoring': 'Pemantauan rilis produksi', 'Monthly report validation': 'Validasi laporan bulanan'
+        'Production release monitoring': 'Pemantauan rilis produksi', 'Monthly report validation': 'Validasi laporan bulanan',
+        '3.5h': '3,5 jam', '4.5h': '4,5 jam', '2.5h': '2,5 jam'
       },
       'zh-Hant-TW': {
         'Read-only public demo': '公開唯讀試用版',
@@ -46,7 +47,8 @@
         'Check hours, project, and evidence': '檢查時數、專案與證明', 'Submit to admin': '提交給管理員',
         'Locked in this public demo': '公開試用版中已鎖定', 'Overtime events': '加班事件',
         '3 sample events': '3 筆範例事件', 'BI-FAST reconciliation support': 'BI-FAST 對帳支援',
-        'Production release monitoring': '正式環境上線監控', 'Monthly report validation': '每月報表驗證'
+        'Production release monitoring': '正式環境上線監控', 'Monthly report validation': '每月報表驗證',
+        '3.5h': '3.5 小時', '4.5h': '4.5 小時', '2.5h': '2.5 小時'
       }
     }
   };
