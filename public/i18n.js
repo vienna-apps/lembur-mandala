@@ -11,9 +11,9 @@
   var originalTitle = document.title;
   var PORTFOLIO_URL = 'https://vienna-portfolio-psi.vercel.app/';
   var DOCK_COPY = {
-    en: { label: 'A working sample by Vie', portfolio: 'View portfolio', contact: 'Discuss a project' },
-    id: { label: 'Contoh karya langsung oleh Vie', portfolio: 'Lihat portofolio', contact: 'Diskusikan proyek' },
-    'zh-Hant-TW': { label: 'Vie 的實作範例', portfolio: '查看作品集', contact: '洽談專案' }
+    en: { portfolio: 'View portfolio', contact: 'Discuss a project' },
+    id: { portfolio: 'Lihat portofolio', contact: 'Diskusikan proyek' },
+    'zh-Hant-TW': { portfolio: '查看作品集', contact: '洽談專案' }
   };
   var TITLE_COPY = {
     'Vie — web, design & data after dark': {
@@ -191,7 +191,7 @@
     dock.className = 'vie-studio-dock';
     dock.dataset.vieStudioDock = '';
     dock.dataset.i18nSkip = '';
-    dock.innerHTML = '<span data-vie-dock-label></span><div><a data-vie-dock-portfolio href="' + PORTFOLIO_URL + '"></a><a data-vie-dock-contact href="mailto:vchoi75@gmail.com?subject=Project%20inquiry%20%E2%80%94%20Vie"></a></div>';
+    dock.innerHTML = '<div><a data-vie-dock-portfolio href="' + PORTFOLIO_URL + '"></a><a data-vie-dock-contact href="mailto:vchoi75@gmail.com?subject=Project%20inquiry%20%E2%80%94%20Vie"></a></div>';
     document.body.appendChild(dock);
   }
 
@@ -199,13 +199,12 @@
     var dock = document.querySelector('[data-vie-studio-dock]');
     if (!dock) return;
     var copy = DOCK_COPY[language] || DOCK_COPY.en;
-    dock.querySelector('[data-vie-dock-label]').textContent = copy.label;
     dock.querySelector('[data-vie-dock-portfolio]').textContent = copy.portfolio + ' ↗';
     dock.querySelector('[data-vie-dock-contact]').textContent = copy.contact + ' ↗';
   }
 
   var style = document.createElement('style');
-  style.textContent = '.vie-language-switch{position:fixed;top:var(--vie-lang-top,12px);right:var(--vie-lang-right,12px);z-index:2147483000;display:flex;align-items:center;padding:3px;border:1px solid var(--vie-lang-border,rgba(40,35,32,.18));border-radius:999px;background:var(--vie-lang-bg,rgba(255,255,255,.88));color:var(--vie-lang-fg,#322b28);box-shadow:0 8px 28px rgba(0,0,0,.12);backdrop-filter:blur(12px);font:700 10px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.04em}.vie-language-switch button{min-width:34px;height:28px;padding:0 8px;border:0;border-radius:999px;background:transparent;color:inherit;font:inherit;cursor:pointer}.vie-language-switch button:hover{background:rgba(127,127,127,.12)}.vie-language-switch button.is-active{background:var(--vie-lang-active,#322b28);color:var(--vie-lang-active-fg,#fff)}.vie-language-switch button:focus-visible{outline:2px solid var(--vie-lang-focus,#c4848b);outline-offset:2px}.vie-studio-dock{position:fixed;left:12px;bottom:12px;z-index:2147482999;width:min(310px,calc(100vw - 24px));padding:10px 12px;border:1px solid rgba(40,35,32,.18);border-radius:16px;background:rgba(255,255,255,.92);color:#242033;box-shadow:0 12px 38px rgba(0,0,0,.16);backdrop-filter:blur(14px);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.vie-studio-dock>span{display:block;margin-bottom:7px;color:#6b6576;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase}.vie-studio-dock>div{display:flex;flex-wrap:wrap;gap:7px 12px}.vie-studio-dock a{color:inherit;font-size:11px;font-weight:750;text-decoration:underline;text-decoration-color:rgba(79,107,255,.45);text-underline-offset:3px}.vie-studio-dock a:hover{color:#4f6bff}.vie-studio-dock a:focus-visible{outline:2px solid #4f6bff;outline-offset:3px;border-radius:3px}@media(max-width:640px){.vie-language-switch{top:var(--vie-lang-mobile-top,8px);right:var(--vie-lang-mobile-right,8px)}.vie-language-switch button{min-width:31px;padding:0 6px}.vie-studio-dock{left:8px;bottom:8px;width:min(286px,calc(100vw - 16px));padding:8px 10px}}@media print{.vie-language-switch,.vie-studio-dock{display:none!important}}';
+  style.textContent = '.vie-language-switch{position:fixed;top:var(--vie-lang-top,12px);right:var(--vie-lang-right,12px);z-index:2147483000;display:flex;align-items:center;padding:3px;border:1px solid var(--vie-lang-border,rgba(40,35,32,.18));border-radius:999px;background:var(--vie-lang-bg,rgba(255,255,255,.88));color:var(--vie-lang-fg,#322b28);box-shadow:0 8px 28px rgba(0,0,0,.12);backdrop-filter:blur(12px);font:700 10px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.04em}.vie-language-switch button{min-width:34px;height:28px;padding:0 8px;border:0;border-radius:999px;background:transparent;color:inherit;font:inherit;cursor:pointer}.vie-language-switch button:hover{background:rgba(127,127,127,.12)}.vie-language-switch button.is-active{background:var(--vie-lang-active,#322b28);color:var(--vie-lang-active-fg,#fff)}.vie-language-switch button:focus-visible{outline:2px solid var(--vie-lang-focus,#c4848b);outline-offset:2px}.vie-studio-dock{position:fixed;left:12px;bottom:12px;z-index:2147482999;width:min(310px,calc(100vw - 24px));padding:10px 12px;border:1px solid rgba(40,35,32,.18);border-radius:16px;background:rgba(255,255,255,.92);color:#242033;box-shadow:0 12px 38px rgba(0,0,0,.16);backdrop-filter:blur(14px);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.vie-studio-dock>div{display:flex;flex-wrap:wrap;gap:7px 12px}.vie-studio-dock a{color:inherit;font-size:11px;font-weight:750;text-decoration:underline;text-decoration-color:rgba(79,107,255,.45);text-underline-offset:3px}.vie-studio-dock a:hover{color:#4f6bff}.vie-studio-dock a:focus-visible{outline:2px solid #4f6bff;outline-offset:3px;border-radius:3px}@media(max-width:640px){.vie-language-switch{top:var(--vie-lang-mobile-top,8px);right:var(--vie-lang-mobile-right,8px)}.vie-language-switch button{min-width:31px;padding:0 6px}.vie-studio-dock{left:8px;bottom:8px;width:min(286px,calc(100vw - 16px));padding:8px 10px}}@media print{.vie-language-switch,.vie-studio-dock{display:none!important}}';
   document.head.appendChild(style);
 
   function start() {
