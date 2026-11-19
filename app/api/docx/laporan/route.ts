@@ -114,39 +114,20 @@ function sig1Row(name: string, title: string, isFirst: boolean): string {
   )
 }
 
-// Post-detail portrait-section Vania sig tables — matched exactly to reference (2026-06 v8)
-// pPr for the name cell: right-aligned, no spacing override
-const SIG_POST_PPR_L = '<w:pPr><w:snapToGrid w:val="0"/><w:jc w:val="right"/><w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr></w:pPr>'
-const TBLSIG_LOOK = 'w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"'
-const EMPTY_SIG_PARA = '<w:p><w:pPr><w:spacing w:line="360" w:lineRule="auto"/><w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr></w:pPr></w:p>'
-
-// T4: indented (tblInd=5670), cols 4678+4232, /Technical Lead no leading space, trailing bold space
-const sigPostDetailT4 = (
+const SIGNATURE_BORDER = 'w:val="single" w:sz="4" w:color="5B9BD5"'
+const detailSignatureTable = (
   `<w:tbl>` +
-  `<w:tblPr><w:tblStyle w:val="TableGridLight"/><w:tblW w:w="8910" w:type="dxa"/><w:tblInd w:w="5670" w:type="dxa"/><w:tblLook ${TBLSIG_LOOK}/></w:tblPr>` +
-  `<w:tblGrid><w:gridCol w:w="4678"/><w:gridCol w:w="4232"/></w:tblGrid>` +
-  `<w:tr><w:trPr><w:trHeight w:val="759"/></w:trPr>` +
-  `<w:tc><w:tcPr><w:tcW w:w="4678" w:type="dxa"/><w:tcBorders><w:top w:val="nil"/><w:left w:val="nil"/></w:tcBorders><w:vAlign w:val="center"/></w:tcPr>` +
-  `<w:p>${SIG_POST_PPR_L}` +
+  `<w:tblPr><w:tblW w:w="7921" w:type="dxa"/><w:tblInd w:w="5670" w:type="dxa"/>` +
+  `<w:tblBorders><w:top ${SIGNATURE_BORDER}/><w:left ${SIGNATURE_BORDER}/><w:bottom ${SIGNATURE_BORDER}/><w:right ${SIGNATURE_BORDER}/><w:insideV ${SIGNATURE_BORDER}/></w:tblBorders></w:tblPr>` +
+  `<w:tblGrid><w:gridCol w:w="4678"/><w:gridCol w:w="3243"/></w:tblGrid>` +
+  `<w:tr><w:trPr><w:cantSplit/><w:trHeight w:val="759"/></w:trPr>` +
+  `<w:tc><w:tcPr><w:tcW w:w="4678" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>` +
+  `<w:p>${SIG_PPR}` +
   `<w:r>${SIG_RPRM_BOLD}<w:t>Vania Sanjaya</w:t></w:r>` +
   `<w:r>${RPRM}<w:t>/Technical Lead</w:t></w:r>` +
   `<w:r>${SIG_RPRM_BOLD}<w:t xml:space="preserve"> </w:t></w:r>` +
   `</w:p></w:tc>` +
-  `<w:tc><w:tcPr><w:tcW w:w="4232" w:type="dxa"/><w:tcBorders><w:top w:val="nil"/><w:right w:val="nil"/></w:tcBorders><w:vAlign w:val="center"/></w:tcPr>` +
-  `<w:p>${SIG_PPR_COL1}</w:p></w:tc></w:tr></w:tbl>`
-)
-// T5: no indent, cols 4230+4232, " / Technical Lead" with leading space
-const sigPostDetailT5 = (
-  `<w:tbl>` +
-  `<w:tblPr><w:tblStyle w:val="TableGridLight"/><w:tblW w:w="8462" w:type="dxa"/><w:tblLook ${TBLSIG_LOOK}/></w:tblPr>` +
-  `<w:tblGrid><w:gridCol w:w="4230"/><w:gridCol w:w="4232"/></w:tblGrid>` +
-  `<w:tr><w:trPr><w:trHeight w:val="759"/></w:trPr>` +
-  `<w:tc><w:tcPr><w:tcW w:w="4230" w:type="dxa"/><w:tcBorders><w:top w:val="nil"/><w:left w:val="nil"/></w:tcBorders><w:vAlign w:val="center"/></w:tcPr>` +
-  `<w:p>${SIG_POST_PPR_L}` +
-  `<w:r>${SIG_RPRM_BOLD}<w:t>Vania Sanjaya</w:t></w:r>` +
-  `<w:r>${RPRM}<w:t xml:space="preserve"> / Technical Lead</w:t></w:r>` +
-  `</w:p></w:tc>` +
-  `<w:tc><w:tcPr><w:tcW w:w="4232" w:type="dxa"/><w:tcBorders><w:top w:val="nil"/><w:right w:val="nil"/></w:tcBorders><w:vAlign w:val="center"/></w:tcPr>` +
+  `<w:tc><w:tcPr><w:tcW w:w="3243" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>` +
   `<w:p>${SIG_PPR_COL1}</w:p></w:tc></w:tr></w:tbl>`
 )
 
@@ -195,14 +176,13 @@ export async function GET(req: NextRequest) {
 
   const bulanLbl = bulanLabel(bulan)
 
-  interface PersonSummary { profile: Profile; events: LemburEvent[]; totalDurasi: number; totalKomp: number }
+  interface PersonSummary { profile: Profile; events: LemburEvent[]; totalJam: number }
   const summary: PersonSummary[] = months.map((m: { profile: Profile; events: LemburEvent[] }) => {
     const events = m.events ?? []
     return {
       profile: m.profile,
       events,
-      totalDurasi: events.reduce((s, e) => s + e.durasi, 0),
-      totalKomp: events.reduce((s, e) => s + e.total_jam, 0),
+      totalJam: events.reduce((s, e) => s + e.total_jam, 0),
     }
   })
 
@@ -216,8 +196,7 @@ export async function GET(req: NextRequest) {
   xml = xml.replace(/<w:pgMar([^/]*)\/>/,
     (m) => m.replace(/w:bottom="\d+"/, 'w:bottom="173"').replace(/w:left="\d+"/, 'w:left="806"'))
 
-  // The source template contains leftover two- and three-column sections.
-  // They make Word flow the four signer rows across separate page columns.
+  // Keep the summary signers in a single page column.
   xml = xml.replace(/<w:cols\b[^>]*\/>/g, (m) => m.replace(/\s+w:num="\d+"/, ''))
 
   // ── 1. Info table value cells (paraIds from template) ─────────────────────
@@ -233,8 +212,8 @@ export async function GET(req: NextRequest) {
   const sumRows = summary.map(p => summaryRow([
     p.profile.nik,
     p.profile.nama,
-    p.totalDurasi.toFixed(2),
-    p.totalKomp.toFixed(2),
+    p.totalJam.toFixed(2),
+    '',
   ])).join('')
 
   xml = xml.substring(0, sumHeaderEnd) + sumRows + '</w:tbl>' + xml.substring(sumTblEnd)
@@ -242,7 +221,7 @@ export async function GET(req: NextRequest) {
   // ── 3. Detail table — replace entirely with 10-column version ─────────────
   const newSumTblEnd = xml.indexOf('</w:tbl>', infoTblEnd) + 8
   const detTblStart = xml.indexOf('<w:tbl>', newSumTblEnd)
-  const detTblEnd = xml.indexOf('</w:tbl>', detTblStart) + 8
+  const finalSectionStart = xml.lastIndexOf('<w:sectPr')
 
   const detTblW = DET_WIDTHS.reduce((s, w) => s + w, 0)
   const detHeaderRow = (
@@ -277,7 +256,9 @@ export async function GET(req: NextRequest) {
     `</w:tbl>`
   )
 
-  xml = xml.substring(0, detTblStart) + newDetTbl + xml.substring(detTblEnd)
+  // A one-point paragraph keeps Word from merging the two adjacent tables.
+  const tableSeparator = '<w:p><w:pPr><w:keepNext/><w:spacing w:before="0" w:after="0" w:line="20" w:lineRule="exact"/></w:pPr></w:p>'
+  xml = xml.substring(0, detTblStart) + newDetTbl + tableSeparator + detailSignatureTable + xml.substring(finalSectionStart)
 
   // ── 4. Kota date paragraph (paraId 55F83FB4) ──────────────────────────────
   const KOTA_PPR = '<w:pPr><w:spacing w:line="360" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Maven Pro" w:hAnsi="Maven Pro"/><w:color w:val="262626" w:themeColor="text1" w:themeTint="D9"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr></w:pPr>'
@@ -296,9 +277,6 @@ export async function GET(req: NextRequest) {
   ]
   const sigTable1 = `<w:tbl>${SIG1_TBL_PR}${SIGNERS.map(([n, t], i) => sig1Row(n, t, i === 0)).join('')}</w:tbl>`
   xml = replaceParaBlock(xml, '4BCFDC35', '38486396', sigTable1)
-
-  // ── 6. Block 2 signing — two Vania tables matching reference (T4 indented + T5 unindented)
-  xml = replaceParaBlock(xml, '740CD5B8', '38DBD901', sigPostDetailT4 + EMPTY_SIG_PARA + EMPTY_SIG_PARA + sigPostDetailT5)
 
   zip.file('word/document.xml', xml)
   const buf = zip.generate({ type: 'nodebuffer' })
